@@ -3,15 +3,20 @@ let enterListeners = 0;
 let lastKnownMousePosition = { x: 0, y: 0 };
 
 window.addEventListener('mousemove', (e) => {
-  // If the mouse moved and scrolling was in progress, we reset the scrolling flag
-  // and manually trigger mouseenter on the element below the cursor
-  if (isScrolling) {
+  // Calculate the distance the mouse has moved
+  const distance = Math.sqrt(
+    Math.pow(e.clientX - lastKnownMousePosition.x, 2) +
+    Math.pow(e.clientY - lastKnownMousePosition.y, 2)
+  );
+
+  // Only proceed if the mouse has moved more than a threshold (e.g., 2 pixels)
+  if (isScrolling && distance > 2) {
     isScrolling = false;
-    console.log('mouse moved, checking for element below');
+    console.log('Mouse moved more than 2 pixels, checking for element below');
 
     let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
     if (elemBelow) {
-      // Dispatch a new mouseenter event
+      // Dispatch the mouseenter event manually
       elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
         bubbles: true,
         cancelable: true,
@@ -20,8 +25,11 @@ window.addEventListener('mousemove', (e) => {
       console.log('Dispatched mouseenter to', elemBelow);
     }
   }
+
+  // Update the last known position
   lastKnownMousePosition = { x: e.clientX, y: e.clientY };
 });
+
 
 window.addEventListener('wheel', () => {
   isScrolling = true;
