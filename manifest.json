@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Better YouTube Hover",
+  "name": "Disable YouTube Hover Autoplay",
   "version": "1.0",
   "description": "Change YouTube hover autoplay functionality to not trigger while scrolling.",
   "permissions": ["activeTab", "storage"],
@@ -13,6 +13,9 @@
     }
   ],
   "host_permissions": ["*://www.youtube.com/*"],
+  "action": {
+    "default_popup": "popup.html"
+  },
   "background": {
     "service_worker": "background.js"
   }
