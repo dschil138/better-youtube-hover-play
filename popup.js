@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Load any previously saved settings
   chrome.storage.sync.get(['mouseSensitivity', 'fullDisable'], function(data) {
     const mouseSensitivity = data.mouseSensitivity || 2;
-    const fullDisable = data.fullDisable || false;
+    const fullDisable = data.fullDisable || 0;
     document.querySelector(`[mouse-sensitivity="${mouseSensitivity}"]`).classList.add('selected');
     document.querySelector(`[full-disable="${fullDisable}"]`).classList.add('selected');
   });
@@ -47,12 +47,12 @@ function buttonHandler(buttonGroup, dataAttribute, speedName) {
       buttonGroup.forEach((btn) => btn.classList.remove('selected'));
       this.classList.add('selected');
 
-      // Convert to boolean
-      if (value === "true") {
-        value = true;
-      } else if (value === "false") {
-        value = false;
-      }
+      // // Convert to boolean
+      // if (value === "1") {
+      //   value = true;
+      // } else if (value === "false") {
+      //   value = false;
+      // }
 
 
       chrome.storage.sync.set({[speedName]: value}, function() {

@@ -2,7 +2,7 @@ let isScrolling = false;
 let enterListeners = 0;
 let lastKnownMousePosition = { x: 0, y: 0 };
 let mouseSensitivity = 2;
-let fullDisable = false;
+let fullDisable = 0;
 let longPressPlay = true;
 let wasFullDisable = false;
 
@@ -35,8 +35,8 @@ function syncSpeeds() {
     if (data.mouseSensitivity) {
       mouseSensitivity = parseInt(data.mouseSensitivity, 10);
     }
-    if (typeof data.fullDisable === 'boolean') {
-      fullDisable = data.fullDisable;
+    if (data.fullDisable) {
+      fullDisable = parseInt(data.fullDisable, 10);
     }
     console.log('sync mouseSensitivity', mouseSensitivity);
     console.log('sync fullDisable', fullDisable);
@@ -90,7 +90,7 @@ function init() {
 
 
 function handleMouseEnter(e) {
-  if (isScrolling || fullDisable) {
+  if (isScrolling || (fullDisable && !longPressPlay)) {
     e.preventDefault();
     e.stopImmediatePropagation();
     e.stopPropagation();
@@ -110,17 +110,14 @@ function addMouseEnterListeners(elements) {
 window.addEventListener('mousedown', function (e) {
 
   longPressTimer = setTimeout(function () {
-    longPress = true;
+    longPressPlay = true;
     if (longPressPlay) {
       isScrolling = false;
       console.log('Playback started due to long press.');
   
       let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
       if (elemBelow ) {
-        if (fullDisable) {
-          wasFullDisable = true;
-          fullDisable = false;
-        }
+
         // Dispatch the mouseenter event manually
         elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
           bubbles: true,
@@ -128,10 +125,7 @@ window.addEventListener('mousedown', function (e) {
           view: window
         }));
         console.log('Dispatched mouseenter to', elemBelow);
-        if (wasFullDisable) {
-          fullDisable = true;
-          wasFullDisable = false;
-        }
+        longPressPlay = false;
       }
     }
   }, 250);
