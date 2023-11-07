@@ -3,9 +3,9 @@ let enterListeners = 0;
 let lastKnownMousePosition = { x: 0, y: 0 };
 let mouseSensitivity = 2;
 let fullDisable = 0;
-let longPressPlay = true;
+let longPressPlay = false;
 let wasFullDisable = false;
-
+let longClickSetting;
 
 function waitForElement(selector, callback) {
   const element = document.querySelector(selector);
@@ -16,11 +16,8 @@ function waitForElement(selector, callback) {
   }
 }
 
-
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.log('message received');
   if (request.action === "runInit") {
-    syncSpeeds();
     init();
     sendResponse({ result: "Init function rerun" });
   }
@@ -29,31 +26,20 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 
 function syncSpeeds() {
-  console.log('message received');
-
-  chrome.storage.sync.get(['mouseSensitivity', 'fullDisable'], function(data) {
-    if (data.mouseSensitivity) {
-      mouseSensitivity = parseInt(data.mouseSensitivity, 10);
-    }
+  chrome.storage.sync.get(['fullDisable', 'longClickSetting'], function(data) {
     if (data.fullDisable) {
-      fullDisable = parseInt(data.fullDisable, 10);
+      fullDisable = parseInt(data.fullDisable, 10) || 0;
     }
-    console.log('sync mouseSensitivity', mouseSensitivity);
-    console.log('sync fullDisable', fullDisable);
-
-    init();
+    if (data.longClickSetting) {
+      longClickSetting = parseInt(data.longClickSetting, 10);
+    }
   });
-
 }
-
 
 
 // init
 function init() {
-  console.log('init');
-  console.log('init mouseSensitivity', mouseSensitivity);
-  console.log('init fullDisable', fullDisable);
-
+  syncSpeeds();
 
   window.addEventListener('mousemove', (e) => {
     // Calculate the distance the mouse has moved
@@ -64,20 +50,16 @@ function init() {
 
     if (isScrolling && distance > mouseSensitivity && !fullDisable) {
       isScrolling = false;
-      console.log(`Mouse moved more than ${mouseSensitivity} pixels, checking for element below`);
 
       let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
       if (elemBelow ) {
-        // Dispatch the mouseenter event manually
         elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
           bubbles: true,
           cancelable: true,
           view: window
         }));
-        console.log('Dispatched mouseenter to', elemBelow);
       }
     }
-
     lastKnownMousePosition = { x: e.clientX, y: e.clientY };
   });
 
@@ -86,14 +68,45 @@ function init() {
     isScrolling = true;
   }, { passive: true });
 
+
+
+// Listening For long press, sending mouseenter if so
+window.addEventListener('mousedown', function (e) {
+
+  longPressTimer = setTimeout(function () {
+    longPressPlay = true;
+    if (longPressPlay && longClickSetting) {
+      isScrolling = false;
+  
+      let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+      if (elemBelow ) {
+
+        elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        }));
+        longPressPlay = false;
+      }
+    }
+  }, 250);
+});
+
 }
 
-
 function handleMouseEnter(e) {
-  if (isScrolling || (fullDisable && !longPressPlay)) {
+
+  if (isScrolling) {
     e.preventDefault();
     e.stopImmediatePropagation();
     e.stopPropagation();
+  } else if (fullDisable) {
+    if (!longPressPlay) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+    }
+
   }
 }
 
@@ -103,34 +116,6 @@ function addMouseEnterListeners(elements) {
     enterListeners++;
   });
 }
-
-
-
-// Listen For long presses
-window.addEventListener('mousedown', function (e) {
-
-  longPressTimer = setTimeout(function () {
-    longPressPlay = true;
-    if (longPressPlay) {
-      isScrolling = false;
-      console.log('Playback started due to long press.');
-  
-      let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-      if (elemBelow ) {
-
-        // Dispatch the mouseenter event manually
-        elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
-          bubbles: true,
-          cancelable: true,
-          view: window
-        }));
-        console.log('Dispatched mouseenter to', elemBelow);
-        longPressPlay = false;
-      }
-    }
-  }, 250);
-});
-
 
 
 
@@ -160,10 +145,11 @@ function observeDOMChanges() {
     childList: true,
     subtree: true
   });
-
-  console.log('MutationObserver set up, added', enterListeners, 'mouseenter listeners');
 }
 
+waitForElement('#thumbnail', (element) => {
+  init();
+});
 
 init();
 observeDOMChanges();

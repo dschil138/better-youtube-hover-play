@@ -1,4 +1,4 @@
-/* This will center the content of the body vertically and horizontally */
+
 body {
   display: flex;
   flex-direction: column;
@@ -6,54 +6,44 @@ body {
   align-items: center;
   min-height: 100vh;
   margin: 0;
-  width: 250px;
+  width: 330px;
   background-color: #282c34;
   color: #abb2bf;
   font-family: Arial, sans-serif;
 
 }
 
-/* This ensures the container takes the least amount of space,
-   centers its content, and has a column layout */
+p {
+  font-size: 1.3em;
+  text-align: center;
+  margin: 0;
+  margin-top: 2.2em;
+  margin-bottom: 0.7em;
+}
+
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 250px;
+  width: 320px;
   margin-bottom: 30px;
 }
 
-/* This will place the buttons in a row */
 .button-container {
   display: flex;
   justify-content: center;
 }
 
-/* Optional: This will add some space between the buttons */
+
 .sensitivity-button {
-  margin: 0 5px; /* Adjust the 5px to increase/decrease space between buttons */
+  margin: 0 5px;
 }
 
 
-/* .speed-button {
-  background-color: #373737;
-  color: #6a6e74;
-  width: 3.8em;
-  border: none;
-  border-radius: 4px;
-  padding: 10px;
-  padding-top: 7px;
-  padding-bottom: 6px;
-  margin: 10px;
-  margin-top: 4px;
-  margin-bottom: 4px;
-  cursor: pointer;
-} */
-
-.disable-button, .sensitivity-button{
+.disable-button, .sensitivity-button, .long-click-setting-button{
   background-color: #414141;
   color: #abb2bf;
-  width: 3.8em;
+  width: 6.4em;
   border: none;
   border-radius: 4px;
   padding: 10px;
@@ -65,12 +55,8 @@ body {
   cursor: pointer;
 }
 
-/* .speed-button.selected {
-  background-color: #465765;
-  color: #c4c7cb;
-} */
 
-.disable-button.selected, .sensitivity-button.selected {
+.disable-button.selected, .sensitivity-button.selected, .long-click-setting-button.selected {
   background-color: #4d9ad8;
   color: #fff;
 }
