@@ -37,15 +37,11 @@ function syncSettings() {
 }
 
 
-// init
 function init() {
   syncSettings();
-  console.log('init');
-  console.log('fullHoverDisable', fullHoverDisable);
-  console.log('longClickSetting', longClickSetting);
 
   window.addEventListener('mousemove', (e) => {
-    // Calculate the distance the mouse has moved
+    // trigger the preview if the mouse has moved enough
     const distance = Math.sqrt(
       Math.pow(e.clientX - lastKnownMousePosition.x, 2) +
       Math.pow(e.clientY - lastKnownMousePosition.y, 2)
@@ -72,28 +68,27 @@ function init() {
   }, { passive: true });
 
 
+  // Listening For long press, sending mouseenter if so
+  window.addEventListener('mousedown', function (e) {
 
-// Listening For long press, sending mouseenter if so
-window.addEventListener('mousedown', function (e) {
+    longPressTimer = setTimeout(function () {
+      longPressPlay = true;
+      if (longPressPlay && longClickSetting) {
+        isScrolling = false;
+    
+        let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+        if (elemBelow ) {
 
-  longPressTimer = setTimeout(function () {
-    longPressPlay = true;
-    if (longPressPlay && longClickSetting) {
-      isScrolling = false;
-  
-      let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-      if (elemBelow ) {
-
-        elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
-          bubbles: true,
-          cancelable: true,
-          view: window
-        }));
-        longPressPlay = false;
+          elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          }));
+          longPressPlay = false;
+        }
       }
-    }
-  }, 250);
-});
+    }, 250);
+  });
 
 }
 
@@ -119,7 +114,6 @@ function addMouseEnterListeners(elements) {
     enterListeners++;
   });
 }
-
 
 
 function observeDOMChanges() {
@@ -150,14 +144,9 @@ function observeDOMChanges() {
   });
 }
 
+
+observeDOMChanges();
+
 waitForElement('#thumbnail', (element) => {
   init();
 });
-
-init();
-observeDOMChanges();
-
-setInterval(() => {
-  console.log('fullHoverDisable', fullHoverDisable);
-  console.log('longClickSetting', longClickSetting);
-}, 4000);

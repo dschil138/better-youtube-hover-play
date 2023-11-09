@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stop YouTube Hover Previews",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Disable the video previews that play when you hover over a video thumbnail on YouTube",
   "permissions": ["activeTab", "storage"],
   "content_scripts": [

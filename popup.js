@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const optionButtons = document.querySelectorAll('.option-button');
 
-  // This function will map your single variable to the longClickSetting and fullHoverDisable settings
   function mapOptionToSettings(optionValue) {
     let settings = {
       longClickSetting: '0',
@@ -27,13 +26,12 @@ document.addEventListener('DOMContentLoaded', function() {
     return settings;
   }
 
-  // Load any previously saved settings
+  // Load previous settings
   chrome.storage.sync.get(['optionValue'], function(data) {
     const optionValue = data.optionValue || '2';
     document.querySelector(`[option-value="${optionValue}"]`).classList.add('selected');
   });
 
-  // function to send message to re-run init function in content.js
   function runInit() {
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       if (tabs.length === 0) {
@@ -43,8 +41,6 @@ document.addEventListener('DOMContentLoaded', function() {
       chrome.tabs.sendMessage(activeTab.id, {action: "runInit"}, function(response) {
         if (chrome.runtime.lastError) {
           console.error("Message failed:", chrome.runtime.lastError.message);
-        } else {
-          console.log("Response from content script:", response);
         }
       });
     });
