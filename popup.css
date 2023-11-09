@@ -6,7 +6,7 @@ body {
   align-items: center;
   min-height: 100vh;
   margin: 0;
-  width: 330px;
+  width: 480px;
   background-color: #282c34;
   color: #abb2bf;
   font-family: Arial, sans-serif;
@@ -21,42 +21,60 @@ p {
   margin-bottom: 0.7em;
 }
 
+.description {
+  font-size: 1.05em;
+  text-align: center;
+  
+
+  width: 7.75em;
+  border: none;
+  border-radius: 4px;
+  /* padding: 7px; */
+  padding-top: 12px;
+  padding-bottom: 11px;
+  margin: 24px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+
+}
+
 .container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 320px;
+  width: 470px;
   margin-bottom: 30px;
 }
 
 .button-container {
   display: flex;
   justify-content: center;
+  margin: 0 40px;
 }
 
 
-.sensitivity-button {
-  margin: 0 5px;
+.option-button {
+  margin: 0 20px;
 }
 
 
-.disable-button, .sensitivity-button, .long-click-setting-button{
+.disable-button, .option-button, .long-click-setting-button{
   background-color: #414141;
   color: #abb2bf;
-  width: 6.4em;
+  width: 7.4em;
   border: none;
   border-radius: 4px;
-  padding: 10px;
-  padding-top: 7px;
-  padding-bottom: 6px;
-  margin: 10px;
+  padding: 0.6em;
+  padding-top: 12px;
+  padding-bottom: 11px;
+  margin: 24px;
   margin-top: 4px;
   margin-bottom: 4px;
   cursor: pointer;
 }
 
 
-.disable-button.selected, .sensitivity-button.selected, .long-click-setting-button.selected {
+.disable-button.selected, .option-button.selected, .long-click-setting-button.selected {
   background-color: #4d9ad8;
   color: #fff;
 }

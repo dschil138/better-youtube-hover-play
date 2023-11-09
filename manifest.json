@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "YouTube Stup Hover Autoplay",
+  "name": "Stop YouTube Hover Previews",
   "version": "1.0",
-  "description": "Change or disable the autoplay-on-hover functionality for the YouTube homepage.",
+  "description": "Disable the video previews that play when you hover over a video thumbnail on YouTube",
   "permissions": ["activeTab", "storage"],
   "content_scripts": [
     {

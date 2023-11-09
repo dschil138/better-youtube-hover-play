@@ -2,10 +2,10 @@ let isScrolling = false;
 let enterListeners = 0;
 let lastKnownMousePosition = { x: 0, y: 0 };
 let mouseSensitivity = 2;
-let fullDisable = 0;
+let fullHoverDisable = 0;
 let longPressPlay = false;
-let wasFullDisable = false;
-let longClickSetting;
+let wasfullHoverDisable = false;
+let longClickSetting = 1;
 
 function waitForElement(selector, callback) {
   const element = document.querySelector(selector);
@@ -25,10 +25,10 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 
-function syncSpeeds() {
-  chrome.storage.sync.get(['fullDisable', 'longClickSetting'], function(data) {
-    if (data.fullDisable) {
-      fullDisable = parseInt(data.fullDisable, 10) || 0;
+function syncSettings() {
+  chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting'], function(data) {
+    if (data.fullHoverDisable) {
+      fullHoverDisable = parseInt(data.fullHoverDisable, 10);
     }
     if (data.longClickSetting) {
       longClickSetting = parseInt(data.longClickSetting, 10);
@@ -39,7 +39,10 @@ function syncSpeeds() {
 
 // init
 function init() {
-  syncSpeeds();
+  syncSettings();
+  console.log('init');
+  console.log('fullHoverDisable', fullHoverDisable);
+  console.log('longClickSetting', longClickSetting);
 
   window.addEventListener('mousemove', (e) => {
     // Calculate the distance the mouse has moved
@@ -48,7 +51,7 @@ function init() {
       Math.pow(e.clientY - lastKnownMousePosition.y, 2)
     );
 
-    if (isScrolling && distance > mouseSensitivity && !fullDisable) {
+    if (isScrolling && distance > mouseSensitivity && !fullHoverDisable) {
       isScrolling = false;
 
       let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
@@ -100,7 +103,7 @@ function handleMouseEnter(e) {
     e.preventDefault();
     e.stopImmediatePropagation();
     e.stopPropagation();
-  } else if (fullDisable) {
+  } else if (fullHoverDisable) {
     if (!longPressPlay) {
     e.preventDefault();
     e.stopImmediatePropagation();
@@ -153,3 +156,8 @@ waitForElement('#thumbnail', (element) => {
 
 init();
 observeDOMChanges();
+
+setInterval(() => {
+  console.log('fullHoverDisable', fullHoverDisable);
+  console.log('longClickSetting', longClickSetting);
+}, 4000);
