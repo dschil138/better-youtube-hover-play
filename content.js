@@ -1,12 +1,16 @@
-let isScrolling = false;
-let enterListeners = 0;
+
 let lastKnownMousePosition = { x: 0, y: 0 };
-let mouseSensitivity = 2;
+let isScrolling, longPressFlag, longClickDebounce, movingThumbnailPlaying, isChannelPage = false;
 let fullHoverDisable = 0;
-let longPressFlag = false;
-let wasfullHoverDisable = false;
 let longClickSetting = 1;
-let optionValue = 2; 
+let mouseSensitivity, optionValue = 2;
+
+
+const movingThumbnailElement = 'ytd-moving-thumbnail-renderer';
+const leavingMovingThumbnailElements = ['#dismissible.style-scope'];
+const channelIdentifier = '#subscriber-count';
+const waitToInitElement = '#thumbnail';
+
 
 function waitForElement(selector, callback) {
   const element = document.querySelector(selector);
@@ -16,6 +20,11 @@ function waitForElement(selector, callback) {
     setTimeout(() => waitForElement(selector, callback), 500);
   }
 }
+
+waitForElement(channelIdentifier, (element) => {
+  isChannelPage = true;
+  init();
+});
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "runInit") {
@@ -38,27 +47,48 @@ function syncSettings() {
 }
 
 
-function init() {
-  syncSettings();
 
-  window.addEventListener('mousemove', (e) => {
-    // trigger the preview if the mouse has moved enough
-    const distance = Math.sqrt(
-      Math.pow(e.clientX - lastKnownMousePosition.x, 2) +
-      Math.pow(e.clientY - lastKnownMousePosition.y, 2)
-    );
+// function te send mouseenter event to all elements below the mouse when user long click or momes mouse on thumbnail they scrolled to
+function sendEnterEvent(e) {
+  let elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
 
-    if (isScrolling && distance > mouseSensitivity && !fullHoverDisable) {
-      isScrolling = false;
+  for (let elemBelow of elementsBelow) {
+    if (elemBelow) {
 
-      let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-      if (elemBelow ) {
-        elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
+      if (isChannelPage) {
+        elemBelow.dispatchEvent(new MouseEvent('mouseleave', {
           bubbles: true,
           cancelable: true,
           view: window
         }));
+        movingThumbnailPlaying = true;
       }
+
+      elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
+        bubbles: true,
+        cancelable: true,
+        view: window
+      }));
+    }
+  }
+}
+
+
+
+function init() {
+
+  syncSettings();
+  observeDOMChanges();
+
+  // Monitor mouse movement to detect if the user is trying to trigger a preview that they scrolled to
+  window.addEventListener('mousemove', (e) => {
+    const distance = Math.sqrt(
+      Math.pow(e.clientX - lastKnownMousePosition.x, 2) +
+      Math.pow(e.clientY - lastKnownMousePosition.y, 2)
+    );
+    if (isScrolling && distance > mouseSensitivity && !fullHoverDisable) {
+      isScrolling = false;
+      sendEnterEvent(e);
     }
     lastKnownMousePosition = { x: e.clientX, y: e.clientY };
   });
@@ -66,250 +96,123 @@ function init() {
 
   window.addEventListener('wheel', () => {
     isScrolling = true;
-    console.log('scrolling', isScrolling);
   }, { passive: true });
 
 
-  // Listening For long press, sending mouseenter if so
+  // stopping opening of links on long click
+  window.addEventListener('mouseup', function (e) {
+    if (longPressFlag && isChannelPage) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+    }
+  }, true);
+
+
+  // stopping opening of links on long click, and reset some flags
+  window.addEventListener('click', function (e) {
+    setTimeout(function () {
+      longPressFlag = false;
+      longClickDebounce = false;
+    }, 150);
+    if (longPressFlag && isChannelPage) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      e.stopPropagation();
+      longPressFlag = false;
+    }
+  }, true);
+
+
+  // Listening For long press, sending mouseenter if so, to trigger preview
   window.addEventListener('mousedown', function (e) {
-
-
-    // console.log('MOUSE DOWN');
-    // console.log('longPressFlag', longPressFlag);
-    // console.log('longClickSetting', longClickSetting);
-    // console.log('fullHoverDisable', fullHoverDisable);
 
     longPressTimer = setTimeout(function () {
       longPressFlag = true;
-      console.log('LONG PRESS');
-      console.log('longPressFlag', longPressFlag);
-      console.log('longClickSetting', longClickSetting);
-      console.log('fullHoverDisable', fullHoverDisable);
-      if (longPressFlag && longClickSetting) {
+      if (longClickSetting) {
+
         isScrolling = false;
+        longClickDebounce = true;
+        sendEnterEvent(e);
 
-    
-        // let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-        // if (elemBelow ) {
-
-        //   elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
-        //     bubbles: true,
-        //     cancelable: true,
-        //     view: window
-        //   }));
-
-        //   elemBelow.dispatchEvent(new MouseEvent('mouseover', {
-        //     bubbles: true,
-        //     cancelable: true,
-        //     view: window
-        //   }));
-        //   longPressFlag = false;
-        // }
-
-
-
-          let elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
-          // for (let elemBelow of elementsBelow) {
-            if (elemBelow) {
-              elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
-                bubbles: true,
-                cancelable: true,
-                view: window
-              }));
-            }
-          // }
+        setTimeout(function () {
           longPressFlag = false;
+          longClickDebounce = false;
+        }, 700);
       }
-
     }, 250);
   });
 
 }
 
 
-
-// The reason this isn't working is bc the resource has already been loaded once, I just removed it from the DOM. So when I trigger the mouseenter event, it doesn't load the resource again. I need to find a way stop the initial mouseenter event.
-
-function handleMouseEnter(e) {
-  console.log('mouse enter', e.target);
-
-  if (((!fullHoverDisable && !longClickSetting) && isScrolling) || ((fullHoverDisable && longClickSetting) && !longPressFlag) || (fullHoverDisable && !longClickSetting)) {
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    e.stopPropagation();
-  }
-
-
-// reference code from popup.js
-  // switch(optionValue) {
-  //   case '1': // only for scrolling
-  //     settings.fullHoverDisable = '0';
-  //     settings.longClickSetting = '0';
-  //     break;
-  //   case '2': only on long click
-  //     settings.longClickSetting = '1';
-  //     settings.fullHoverDisable = '1';
-  //     break;
-  //   case '3': complete disable
-  //     settings.fullHoverDisable = '1';
-  //     settings.longClickSetting = '0';
-  //     break;
-  // }
-
-//  ORIGINAL
-  // if (isScrolling) {
-  //   // console.log('scrolling, prevent default');
-  //   e.preventDefault();
-  //   e.stopImmediatePropagation();
-  //   e.stopPropagation();
-  // } else if (fullHoverDisable) {
-  //   if (!longPressFlag) {
-  //   // console.log('full hover disabled, prevent default');
-  //   e.preventDefault();
-  //   e.stopImmediatePropagation();
-  //   e.stopPropagation();
-  //   } 
-  // }
-
-
-
-  const elements = document.querySelectorAll('ytd-moving-thumbnail-renderer');
-// log the number of elements
-  console.log(elements.length);
-  
-  // for each element, if isScrolling is true, remove the element
-  for (const element of elements) {
-    if (isScrolling) {
-      console.log('scrolling, prevent default');
-      element.remove();
-    } 
-    else if (fullHoverDisable) {
-      if (!longPressFlag) {
-      console.log('full hover disabled, prevent default');
-      element.remove();
-      } 
-    } else {
-      console.log('allowing');
-    }
-  }
-
-
-}
-
-
-
-
-// Override addEventListener to log events
-const originalAddEventListener = EventTarget.prototype.addEventListener;
-EventTarget.prototype.addEventListener = function(type, listener, options) {
-  // console.log(`Event listener added: Type: ${type}, Target:`, this);
-  return originalAddEventListener.call(this, type, listener, options);
-};
-
-// Observe changes to the DOM
-const observer = new MutationObserver(mutations => {
-  mutations.forEach(mutation => {
-    if (mutation.addedNodes) {
-      mutation.addedNodes.forEach(node => {
-        if (node.nodeName.toLowerCase() === 'ytd-moving-thumbnail-renderer') {
-          console.log('<renderer> element modified or added:', node);
-          // console.trace(); 
-        }
-      });
-    }
-  });
-});
-
-
-
-
-// Start observing the document body
-observer.observe(document.body, {
-  childList: true,
-  subtree: true
-});
-
-// Remember to disconnect the observer when your extension is deactivated
-
-
-
-
-
-
-
+// Adding mouseenter & mouseleave listeners
 function addMouseEnterListeners(elements) {
   elements.forEach(element => {
     element.addEventListener('mouseenter', handleMouseEnter, true);
-
-    enterListeners++;
-    // console.log('added mouseenter listeners', enterListeners);
+  });
+}
+function addMouseLeaveListeners(elements) {
+  elements.forEach(element => {
+    element.addEventListener('mouseleave', handleMouseLeave, true);
   });
 }
 
+// on mouseenter, we decide whether or not to stop the preview, based on the settings
+// Special care must be taken on channel pages, as the setup is more complex
+function handleMouseEnter(e) {
+  if (isChannelPage && movingThumbnailPlaying) { return; }
+  
+  if (isScrolling || (!longPressFlag && longClickSetting) || (fullHoverDisable && !longClickSetting)) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    e.stopPropagation();
+    
+    const elements = document.querySelectorAll(movingThumbnailElement);
+    for (const element of elements) {
+      element.remove();
+    }
+  }
+}
 
+// mouseleave is only used on channel pages, to stop the preview
+function handleMouseLeave(e) {
+  if (e.target.matches('#dismissible') && !longClickDebounce) {
+    movingThumbnailPlaying = false;
+    return;
+  }
+}
+
+// Observe DOM changes to add mouseenter & mouseleave listeners to new elements, as Youtube dynamic loads content
 function observeDOMChanges() {
-  // const selector = '#dismissible.style-scope';
-  const selectors = ['#dismissible.style-scope', '#thumbnail', 'ytd-video-preview', '.ytd-thumbnail-overlay-loading-preview-renderer', '.ytd-moving-thumbnail-renderer'];
+  const selectors = leavingMovingThumbnailElements;
+  // #dismissible.style-scope, #metadata-line.style-scope, 
+  // #metadata-line.style-scope, #dismissible.style-scope,.style-scope
 
   for (const selector of selectors) {
-
-    const initialElements = document.querySelectorAll(selector);
-    addMouseEnterListeners(initialElements);
-
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.addedNodes && mutation.addedNodes.length > 0) {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === 1 && node.matches(selector)) {
-              // console.log('added node', node);
-              addMouseEnterListeners([node]);
-            }
-            if (node.nodeType === 1 && node.querySelectorAll) {
-              const children = node.querySelectorAll(selector);
-              addMouseEnterListeners(children);
-            }
-          });
+    const handleNode = node => {
+      if (node.nodeType === 1) {
+        if (node.matches(selector)) {
+          addMouseEnterListeners([node]);
+          if (isChannelPage) addMouseLeaveListeners([node]);
         }
-      });
-    });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
-
-}
-
-
-  
-}
-
-function observeMovingThumbnail() {
-
-function removeYtdMovingThumbnail() {
-  // nothing, dummy function
-}
-
-// Create an observer instance
-const observer = new MutationObserver(mutations => {
-  mutations.forEach(mutation => {
-      if (mutation.addedNodes.length) {
-          removeYtdMovingThumbnail(); // dummy function
+        node.querySelectorAll(selector).forEach(handleNode);
       }
-  });
-});
+    };
 
-// Configuration of the observer
-const config = { childList: true, subtree: true };
+    document.querySelectorAll(selector).forEach(handleNode);
 
-// Start observing the body for DOM changes
-observer.observe(document.body, config);
-
+    new MutationObserver(mutations => {
+      mutations.forEach(mutation => {
+        mutation.addedNodes.forEach(handleNode);
+      });
+    }).observe(document.body, { childList: true, subtree: true });
+  }
 }
 
-observeDOMChanges();
-observeMovingThumbnail();
 
-waitForElement('#thumbnail', (element) => {
+// wait for the thumbnail to load before running init
+waitForElement(waitToInitElement, (element) => {
   init();
 });
+
