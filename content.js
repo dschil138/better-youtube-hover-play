@@ -162,7 +162,6 @@ function addMouseEnterListeners(elements) {
     element.addEventListener('mouseenter', handleMouseEnter, true);
     enterListeners++;
     totalListeners = enterListeners + leaveListeners;
-    console.log('total listeners: ', totalListeners, 'enter: ', enterListeners, 'leaveL: ', leaveListeners);
   });
 }
 function addMouseLeaveListeners(elements) {
@@ -170,7 +169,6 @@ function addMouseLeaveListeners(elements) {
     element.addEventListener('mouseleave', handleMouseLeave, true);
     leaveListeners++;
     totalListeners = enterListeners + leaveListeners;
-    console.log('total listeners: ', totalListeners, 'enter: ', enterListeners, 'leaveL: ', leaveListeners);
   });
 }function observeDOMChanges() {
   const selectors = mainElements;
