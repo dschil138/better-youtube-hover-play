@@ -3,7 +3,7 @@ let isScrolling
 let longPressFlag = false;
 let longClickDebounce = false;
 let movingThumbnailPlaying = false;
-let isChannelPage = false;
+let isOtherPage = false;
 let fullHoverDisable = 0;
 let longClickSetting = 1;
 let mouseSensitivity = 2;
@@ -11,9 +11,35 @@ let optionValue = 2;
 let enterListeners = 0;
 let leaveListeners = 0;
 let totalListeners = 0;
+// let firstPreviewPlayed = false;
 
-const mainElements = ['#dismissible.style-scope','ytd-rich-grid-media.style-scope'];
-const channelIdentifier = '#subscriber-count';
+const mainElements = [
+
+// main page
+  '#dismissible.style-scope', 
+
+// channel pages
+  'ytd-rich-grid-media.style-scope', 
+
+// watch pages (not working yet)
+  'ytd-compact-video-renderer', // (blocks all but first entry)
+
+  // '#spinner-container', 
+  // '#related', 
+  // '#contents.style-scope', 
+  // '#mouseover-overlay.style-scope', 
+  // '#overlays.style-scope', 
+  // 'ytd-item-section-renderer', 
+
+  // 'ytd-rich-item-renderer'
+
+// watch history page (??)
+
+];
+// const otherPageIdentifiers = ['#subscriber-count', '#owner-sub-count'];
+const channelPageIdentifier = '#subscriber-count';
+const watchPageIdentifier = '.ytd-comments'; //incorrecly identifie homepage as watch page
+// const historyPageIdentifier = '#owner-sub-count';
 const waitToInitElement = '#thumbnail';
 const leavingMovingThumbnailElement = '#dismissible';
 
@@ -27,10 +53,17 @@ function waitForElement(selector, callback) {
   }
 }
 
-waitForElement(channelIdentifier, (element) => {
-  isChannelPage = true;
+
+waitForElement(channelPageIdentifier, (element) => {
+  isOtherPage = true;
   init();
 });
+
+waitForElement(watchPageIdentifier, (element) => {
+  isOtherPage = true;
+  init();
+});
+
 
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.action === "runInit") {
@@ -59,7 +92,7 @@ function fullDebug() {
   console.log('fullHoverDisable: ', fullHoverDisable);
   console.log('longClickDebounce: ', longClickDebounce);
   console.log('movingThumbnailPlaying: ', movingThumbnailPlaying);
-  console.log('isChannelPage: ', isChannelPage);
+  console.log('isOtherPage: ', isOtherPage);
 }
 
 
@@ -70,23 +103,26 @@ function sendEnterEvent(e) {
   for (let elemBelow of elementsBelow) {
     if (elemBelow) {
 
-      if (isChannelPage) {
+      if (isOtherPage) {
         elemBelow.dispatchEvent(new MouseEvent('mouseleave', {
           bubbles: true,
           cancelable: true,
           view: window
         }));
-        
       }
 
-      elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
-        bubbles: true,
-        cancelable: true,
-        view: window
-      }));
+      if ((!movingThumbnailPlaying) || longPressFlag) { //trying to make preview not restart when hitting mute, etc
+
+        elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
+          bubbles: true,
+          cancelable: true,
+          view: window
+        }));
 
     }
-    if (isChannelPage) {
+
+    }
+    if (isOtherPage && fullHoverDisable) {
       movingThumbnailPlaying = true;
     }
   }
@@ -120,17 +156,21 @@ function init() {
 
   // stopping opening of links on long click, and reset some flags
   window.addEventListener('click', function (e) {
-    setTimeout(function () {
-      longPressFlag = false;
-      longClickDebounce = false;
-    }, 150);
+    
 
-    if (longPressFlag && isChannelPage) {
+    if (longPressFlag && isOtherPage) {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
-      longPressFlag = false;
+      // longPressFlag = false;
     }
+
+    setTimeout(function () {
+      longPressFlag = false;
+      longClickDebounce = false;
+    }, 250);
+
+
   }, true);
 
 
@@ -170,19 +210,21 @@ function addMouseLeaveListeners(elements) {
     leaveListeners++;
     totalListeners = enterListeners + leaveListeners;
   });
-}function observeDOMChanges() {
+}
+
+function observeDOMChanges() {
   const selectors = mainElements;
 
   const handleNode = (node, isDirectChild) => {
     if (node.nodeType === 1) {
       if (selectors.some(selector => node.matches(selector))) {
         addMouseEnterListeners([node]);
-        if (isChannelPage) addMouseLeaveListeners([node]);
+        if (isOtherPage) addMouseLeaveListeners([node]);
       } else if (isDirectChild) {
         Array.from(node.children).forEach(child => {
           if (selectors.some(selector => child.matches(selector))) {
             addMouseEnterListeners([child]);
-            if (isChannelPage) addMouseLeaveListeners([child]);
+            if (isOtherPage) addMouseLeaveListeners([child]);
           }
         });
       }
@@ -201,7 +243,7 @@ function addMouseLeaveListeners(elements) {
 // on mouseenter, we decide whether or not to stop the preview based on the settings
 // special care must be taken for the channel pages, as the setup is more complex
 function handleMouseEnter(e) {
-  if (isChannelPage && movingThumbnailPlaying) { return; }
+  if (isOtherPage && movingThumbnailPlaying) { return; }
   
   if (isScrolling || (!longPressFlag && longClickSetting) || (fullHoverDisable && !longClickSetting)) {
     e.preventDefault();
@@ -228,7 +270,7 @@ function observeDOMChanges() {
       if (node.nodeType === 1) {
         if (isDirectChild && node.matches(selector)) {
           addMouseEnterListeners([node]);
-          if (isChannelPage) addMouseLeaveListeners([node]);
+          if (isOtherPage) addMouseLeaveListeners([node]);
         }
         if (!isDirectChild) {
           Array.from(node.children).forEach(child => handleNode(child, true));

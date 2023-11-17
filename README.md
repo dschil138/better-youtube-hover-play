@@ -1,5 +1,6 @@
 # Stop YouTube Hover Previews
 
+#### Available in the [Chrome Store](https://chromewebstore.google.com/detail/stop-youtube-hover-previe/amfcggbbflmkdaocjifopjpjmbhnkloo)
 
 The YouTube homepage autoplays video previews anytime your mouse goes over a thumbnail. This can be very distracting while trying to browse.
 
@@ -13,3 +14,4 @@ Videos do not play on hover, but can be triggered by a "long click". Click and h
 
 3. COMPLETE DISABLE
 Disable the video previews altogether. Do not play video previews ever.
+
