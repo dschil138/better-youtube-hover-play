@@ -11,35 +11,19 @@ let optionValue = 2;
 let enterListeners = 0;
 let leaveListeners = 0;
 let totalListeners = 0;
-// let firstPreviewPlayed = false;
+let extensionEnabled = true;
 
 const mainElements = [
-
 // main page
   '#dismissible.style-scope', 
-
 // channel pages
   'ytd-rich-grid-media.style-scope', 
-
 // watch pages (not working yet)
-  'ytd-compact-video-renderer', // (blocks all but first entry)
-
-  // '#spinner-container', 
-  // '#related', 
-  // '#contents.style-scope', 
-  // '#mouseover-overlay.style-scope', 
-  // '#overlays.style-scope', 
-  // 'ytd-item-section-renderer', 
-
-  // 'ytd-rich-item-renderer'
-
-// watch history page (??)
-
+  'ytd-compact-video-renderer',
 ];
-// const otherPageIdentifiers = ['#subscriber-count', '#owner-sub-count'];
+
 const channelPageIdentifier = '#subscriber-count';
-const watchPageIdentifier = '.ytd-comments'; //incorrecly identifie homepage as watch page
-// const historyPageIdentifier = '#owner-sub-count';
+const watchPageIdentifier = '.ytd-comments';
 const waitToInitElement = '#thumbnail';
 const leavingMovingThumbnailElement = '#dismissible';
 
@@ -75,15 +59,28 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 
 function syncSettings() {
-  chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting'], function(data) {
-    if (data.fullHoverDisable) {
-      fullHoverDisable = parseInt(data.fullHoverDisable, 10);
-    }
-    if (data.longClickSetting) {
-      longClickSetting = parseInt(data.longClickSetting, 10);
-    }
+  console.log("syncing settings");
+  return new Promise((resolve, reject) => {
+    chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting'], function(data) {
+      if (data.fullHoverDisable) {
+        fullHoverDisable = parseInt(data.fullHoverDisable, 10);
+      }
+      if (data.longClickSetting) {
+        longClickSetting = parseInt(data.longClickSetting, 10);
+      }
+      
+      chrome.storage.sync.get('extensionEnabled', function(data) {
+        extensionEnabled = data.extensionEnabled;
+        console.log("was data", data.extensionEnabled);
+        resolve(); // Resolve the promise after all settings are synced
+      });
+    });
   });
 }
+
+
+
+
 
 function fullDebug() {
   console.log('isScrolling: ', isScrolling);
@@ -98,6 +95,7 @@ function fullDebug() {
 
 // function te send mouseenter event to all elements below the mouse when user long click or momes mouse on thumbnail they scrolled to
 function sendEnterEvent(e) {
+  if (!extensionEnabled) { return; }
   let elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
 
   for (let elemBelow of elementsBelow) {
@@ -129,8 +127,23 @@ function sendEnterEvent(e) {
 }
 
 
-function init() {
-  syncSettings();
+async function init() {
+  
+  await syncSettings();
+  console.log("init -- extensionEnabled: ", extensionEnabled);
+
+  if (!extensionEnabled) { 
+
+    // remove all listeners
+    document.querySelectorAll(mainElements).forEach(element => {
+      element.removeEventListener('mouseenter', handleMouseEnter, true);
+      element.removeEventListener('mouseleave', handleMouseLeave, true);
+    });
+    
+    return; 
+  }
+  console.log('passed check');
+
   observeDOMChanges();
 
   // Monitor mouse movement to detect if the user is trying to trigger a preview that they scrolled to
@@ -158,7 +171,7 @@ function init() {
   window.addEventListener('click', function (e) {
     
 
-    if (longPressFlag && isOtherPage) {
+    if (longPressFlag && isOtherPage && extensionEnabled) {
       e.preventDefault();
       e.stopImmediatePropagation();
       e.stopPropagation();
