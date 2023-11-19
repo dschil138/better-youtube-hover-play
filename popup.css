@@ -21,10 +21,15 @@ p {
   margin-bottom: 0.7em;
 }
 
+span {
+  /* color: #f4eeb6; */
+  color: #79bff8;
+}
+
 .description {
   font-size: 1.05em;
   text-align: center;
-  width: 7.75em;
+  width: 8em;
   border: none;
   border-radius: 4px;
   padding-top: 12px;
@@ -71,7 +76,7 @@ p {
 .option-button {
   background-color: #414141;
   color: #abb2bf;
-  width: 7.4em;
+  width: 7.6em;
   border: none;
   border-radius: 4px;
   padding: 0.6em;
