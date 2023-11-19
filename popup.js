@@ -10,15 +10,19 @@ function getExtensionEnabled() {
   });
 }
 
+
+
 document.addEventListener('DOMContentLoaded', async function () {
-  // function to send message to re-run init function in content.js
+
   function runInit() {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
       chrome.tabs.sendMessage(tabs[0].id, { action: "runInit" });
     });
   }
 
+
   try {
+
     const toggleSwitch = document.getElementById('toggleSwitch');
     const optionButtons = document.querySelectorAll('.option-button');
 
@@ -26,7 +30,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     toggleSwitch.checked = extensionEnabled;
 
-    console.log("standalone log 1 -- extensionEnabled:", extensionEnabled);
 
     // add event listener to toggleSwitch
     toggleSwitch.addEventListener('input', function () {
@@ -36,7 +39,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
       });
     
-      extensionEnabled = this.checked; // Update the extensionEnabled variable
+      extensionEnabled = this.checked;
     
       handleToggleButtons.call(this);
     });
@@ -59,7 +62,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     async function handleToggleButtons() {
       if (extensionEnabled) {
-        console.log("adding via selectCorrectButton");
         let optionValueButton = await getOptionValue();
         selectCorrectButton(optionButtons, optionValueButton);
         buttonHandler(optionButtons); // Enable button listeners
@@ -68,17 +70,12 @@ document.addEventListener('DOMContentLoaded', async function () {
           btn.classList.remove('selected');
           btn.removeEventListener('click', buttonClickHandler); // remove event listeners when disabled
         });
-        console.log("ELSE removing");
       }
       setTimeout(runInit, 50);
     }
 
 
 
-
-
-
-    // function to map option value to settings object
     function mapOptionToSettings(optionValue) {
       let settings = {
         longClickSetting: '0',
@@ -137,9 +134,8 @@ document.addEventListener('DOMContentLoaded', async function () {
       });
     }
     
-    // Update the buttonHandler function
+
     function buttonHandler(buttonGroup) {
-      console.log(" in buttonHandler");
       buttonGroup.forEach((button) => {
         // Bind buttonGroup as the parameter for buttonClickHandler
         button.addEventListener('click', buttonClickHandler.bind(null, buttonGroup));
@@ -147,7 +143,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
     
     function removeButtonListeners(buttonGroup) {
-      console.log("Removing button listeners");
       buttonGroup.forEach((button) => {
         button.removeEventListener('click', buttonClickHandler);
       });
@@ -158,17 +153,16 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
 
-
-
     function selectCorrectButton(buttonGroup, optionValue) {
-      console.log("in selcetCorrectButton", optionValue);
       buttonGroup.forEach((button) => {
-        console.log(button.getAttribute);
         if (button.getAttribute('option-value') === optionValue) {
           button.classList.add('selected');
         }
       });
     }
+
+
+    
   } catch (error) {
     console.error("Error retrieving extensionEnabled:", error);
   }
@@ -181,7 +175,6 @@ let listenersAttached = false;
 
 async function handleToggleButtons() {
   if (extensionEnabled) {
-    console.log("adding via selectCorrectButton");
     let optionValueButton = await getOptionValue();
     selectCorrectButton(optionButtons, optionValueButton);
     if (!listenersAttached) {
@@ -192,7 +185,6 @@ async function handleToggleButtons() {
     optionButtons.forEach((btn) => {
       btn.classList.remove('selected');
     });
-    console.log("ELSE removing");
     if (listenersAttached) {
       removeButtonListeners(optionButtons);  // Remove button listeners when the extension is disabled
       listenersAttached = false;
