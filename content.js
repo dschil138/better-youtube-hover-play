@@ -174,11 +174,9 @@ async function init() {
     }
 
     
-    if (longPressFlag && isOtherPage && extensionEnabled) {
+    if (longPressFlag && extensionEnabled) {
       e.preventDefault();
-      // e.stopImmediatePropagation();
       e.stopPropagation();
-      // longPressFlag = false;
     }
 
     setTimeout(function () {

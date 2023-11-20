@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const optionButtons = document.querySelectorAll('.option-button');
 
     let extensionEnabled = await getExtensionEnabled();
+    console.log('extensionEnabled', extensionEnabled);
 
     toggleSwitch.checked = extensionEnabled;
 
@@ -162,7 +163,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
 
-    
+
   } catch (error) {
     console.error("Error retrieving extensionEnabled:", error);
   }
