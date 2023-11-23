@@ -1,5 +1,5 @@
 let lastKnownMousePosition = { x: 0, y: 0 };
-let isScrolling = false;
+let isScrolling = true;
 let longPressFlag = false;
 let longClickDebounce = false;
 let movingThumbnailPlaying = false;
@@ -76,10 +76,16 @@ function fullDebug() {
   console.log('isOtherPage: ', isOtherPage);
 }
 
+function isYouTubeHomePage(url) {
+  const homePageRegex = /^https:\/\/www\.youtube\.com\/(?:\?.*)?$/;
+  return homePageRegex.test(url);
+}
+
 
 function checkURL() {
   const url = window.location.href;
-  if (url === "https://www.youtube.com/" || url === "https://www.youtube.com") {
+    if (isYouTubeHomePage(url) || url.startsWith("https://www.youtube.com/results") || url.startsWith("https://www.youtube.com/feed/subscriptions")) {
+
     if (isOtherPage) {
       isOtherPage = false;
       movingThumbnailPlaying = false;
@@ -173,7 +179,7 @@ async function init() {
       }
     }
 
-    
+
     if (longPressFlag && extensionEnabled) {
       e.preventDefault();
       e.stopPropagation();
@@ -220,7 +226,6 @@ function addMouseLeaveListeners(elements) {
     element.addEventListener('mouseleave', handleMouseLeave, true);
     leaveListeners++;
     totalListeners = enterListeners + leaveListeners;
-
   });
 }
 
@@ -282,9 +287,15 @@ checkURL();
 setInterval(checkURL, 800);
 
 // wait for the thumbnail to load before running init
-waitForElement(waitToInitElement, (element) => {
-  init();
+waitForElement(waitToInitElement, async (element) => {
+  try {
+    await syncSettings();
+    init();
+  } catch (error) {
+    console.error('Error syncing settings:', error);
+  }
 });
+
 
 
 
