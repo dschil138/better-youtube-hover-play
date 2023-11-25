@@ -12,15 +12,24 @@ let enterListeners = 0;
 let leaveListeners = 0;
 let totalListeners = 0;
 let extensionEnabled = true;
+let isFirstRun = true;
+let startTime;
+let observed = false;
 
+const isDebugMode = true;
 
+function log(...args) {
+  if (isDebugMode) {
+    console.log(...args);
+  }
+}
 
 const mainElements = [
-// main page
+  // main page
   '#dismissible.style-scope', 
-// channel pages
+  // channel pages
   'ytd-rich-grid-media.style-scope', 
-// watch pages
+  // watch pages
   'ytd-compact-video-renderer',
 ];
 
@@ -47,23 +56,38 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 });
 
 
+// function syncSettings() {
+//   return new Promise((resolve, reject) => {
+//     chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting'], function(data) {
+//       if (data.fullHoverDisable) {
+//         fullHoverDisable = parseInt(data.fullHoverDisable, 10);
+//       }
+//       if (data.longClickSetting) {
+//         longClickSetting = parseInt(data.longClickSetting, 10);
+//       }
+      
+//       chrome.storage.sync.get('extensionEnabled', function(data) {
+//         extensionEnabled = data.extensionEnabled !== undefined ? data.extensionEnabled : true;
+//         resolve();
+//       });
+//     });
+//   });
+// }
+
 function syncSettings() {
   return new Promise((resolve, reject) => {
-    chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting'], function(data) {
-      if (data.fullHoverDisable) {
-        fullHoverDisable = parseInt(data.fullHoverDisable, 10);
-      }
-      if (data.longClickSetting) {
-        longClickSetting = parseInt(data.longClickSetting, 10);
-      }
-      
-      chrome.storage.sync.get('extensionEnabled', function(data) {
-        extensionEnabled = data.extensionEnabled !== undefined ? data.extensionEnabled : true;
-        resolve();
-      });
+    chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting', 'extensionEnabled'], (data) => {
+      fullHoverDisable = data.fullHoverDisable ? parseInt(data.fullHoverDisable, 10) : fullHoverDisable;
+      longClickSetting = data.longClickSetting ? parseInt(data.longClickSetting, 10) : longClickSetting;
+      extensionEnabled = data.extensionEnabled !== undefined ? data.extensionEnabled : true;
+      log('fullHoverDisable', fullHoverDisable);
+      resolve();
     });
   });
 }
+
+
+
 
 
 function fullDebug() {
@@ -84,15 +108,21 @@ function isYouTubeHomePage(url) {
 
 function checkURL() {
   const url = window.location.href;
-    if (isYouTubeHomePage(url) || url.startsWith("https://www.youtube.com/results") || url.startsWith("https://www.youtube.com/feed/subscriptions")) {
+  if (isYouTubeHomePage(url) || url.startsWith("https://www.youtube.com/results") || url.startsWith("https://www.youtube.com/feed/subscriptions")) {
 
-    if (isOtherPage) {
+    if (isOtherPage || isFirstRun) {
+      log('isYouTubeHomePage');
+      observed = false;
       isOtherPage = false;
       movingThumbnailPlaying = false;
       init();
     }
-  } else {
-    if (!isOtherPage) {
+  }
+    
+  else { // it's not one of those URLs
+    if (!isOtherPage || isFirstRun) {
+      log('isOtherPage');
+      observed = false;
       isOtherPage = true;
       movingThumbnailPlaying = false;
       init();
@@ -104,6 +134,7 @@ function checkURL() {
 
 // function te send mouseenter event to all elements below the mouse when user long click or momes mouse on thumbnail they scrolled to
 function sendEnterEvent(e) {
+  log('sending enter event');
   if (!extensionEnabled) { return; }
   if (longClickSetting && !longPressFlag) { return; }
 
@@ -135,18 +166,24 @@ function sendEnterEvent(e) {
 
 
 async function init() {
+  isFirstRun = false;
   await syncSettings();
-  if (!extensionEnabled) { 
 
-    // remove listeners if extension is disabled
+  if (!extensionEnabled) { 
+    // remove all listeners if extension is disabled
     document.querySelectorAll(mainElements).forEach(element => {
       element.removeEventListener('mouseenter', handleMouseEnter, true);
       element.removeEventListener('mouseleave', handleMouseLeave, true);
     });
+    window.removeEventListener('mousedown', handleMouseDown);
+    window.removeEventListener('mouseup', handleMouseUp);
+    window.removeEventListener('click', handleMouseClick, true);
     return; 
   }
 
-  observeDOMChanges();
+  if (!observed) {
+    observeDOMChanges();
+  }
 
   // Monitor mouse movement to detect if the user is trying to trigger a preview that they scrolled to
   window.addEventListener('mousemove', (e) => {
@@ -169,51 +206,17 @@ async function init() {
   }, { passive: true });
 
 
-  // stopping opening of links on long click, and reset some flags
-  window.addEventListener('click', function (e) {
-    // get elements below the mouse, if any of the elements below has the id '#movie_player', return early
-    let elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
-    for (let elemBelow of elementsBelow) {
-      if (elemBelow.id === 'movie_player') {
-        return;
-      }
-    }
+  window.addEventListener('mousedown', handleMouseDown);
 
+  window.addEventListener('mouseup', handleMouseUp);
 
-    if (longPressFlag && extensionEnabled) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
+  window.addEventListener('click', handleMouseClick, true);
 
-    setTimeout(function () {
-      longPressFlag = false;
-      longClickDebounce = false;
-    }, 250);
-  }, true);
-
-  // Listening For long press, sending mouseenter if so, to trigger preview
-  window.addEventListener('mousedown', function (e) {
-
-    longPressTimer = setTimeout(function () {
-      longPressFlag = true;
-      if (longClickSetting) {
-
-        isScrolling = false;
-        longClickDebounce = true;
-        sendEnterEvent(e);
-
-        setTimeout(function () {
-          // longPressFlag = false;
-          longClickDebounce = false;
-        }, 700);
-      }
-    }, 250);
-  });
 }
 
 
 
-// Adding mouseenter & mouseleave listeners
+
 function addMouseEnterListeners(elements) {
   elements.forEach(element => {
     element.addEventListener('mouseenter', handleMouseEnter, true);
@@ -230,15 +233,64 @@ function addMouseLeaveListeners(elements) {
 }
 
 
+// Listening For long press, sending mouseenter if so, to trigger preview
+function handleMouseDown(e) {
+  log('mousedown');
+  startTime = Date.now();
 
-// on mouseenter, we decide whether or not to stop the preview based on the settings
-// special care must be taken for the channel pages, as the setup is more complex
+  longPressTimer = setTimeout(function () {
+    log('long press');
+    longPressFlag = true;
+    if (longClickSetting) {
+      isScrolling = false;
+      longClickDebounce = true;
+      sendEnterEvent(e);
+    }
+  }, 415);
+}
+
+// stop the long press timer, and reset some flags
+function handleMouseUp(e) {
+  clearTimeout(longPressTimer);
+  const duration = Date.now() - startTime; // Calculate the duration
+  log('Click duration: ' + duration + ' ms');
+  setTimeout(function () {
+    longPressFlag = false;
+    longClickDebounce = false;
+  }, 250);
+}
+
+
+// stop the opening of links on long click
+function handleMouseClick(e) {
+  // get elements below the mouse, if any of the elements below has the id '#movie_player', return early, bc this is the main video player on "watch" pages
+  let elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
+  for (let elemBelow of elementsBelow) {
+    if (elemBelow.id === 'movie_player') {
+      return;
+    }
+  }
+
+  // Otherwise, if it's a long click, don't open the link
+  if (longPressFlag && extensionEnabled) {
+    log('preventDefault 2');
+    e.preventDefault();
+    e.stopPropagation();
+  }
+}
+
+// on mouseenter, we decide whether or not to stop the preview based on the settings.
+// Special care must be taken for pages that play 'moving thumbnail' previews, as the setup is more complex
 function handleMouseEnter(e) {
+  log('mouseenter');
+  //moving thumbnails have invisible elements that can be "entered" while it plays, so we don't want those to stop the preview
   if (isOtherPage && movingThumbnailPlaying) { 
+    log('returning early');
     return; 
   }
   
   if (isScrolling || (!longPressFlag && longClickSetting) || (fullHoverDisable && !longClickSetting)) {
+    log('preventDefault main');
     e.preventDefault();
     e.stopImmediatePropagation();
     e.stopPropagation();
@@ -249,12 +301,12 @@ function handleMouseEnter(e) {
 function handleMouseLeave(e) {
   if (e.target.matches(leavingMovingThumbnailElement) && !longClickDebounce) {
     movingThumbnailPlaying = false;
-    return;
   }
 }
 
 
 function observeDOMChanges() {
+  observed = true;
   const selectors = mainElements;
 
   const handleNode = (node, isDirectChild) => {
@@ -283,17 +335,12 @@ function observeDOMChanges() {
 
 
 
-checkURL();
-setInterval(checkURL, 800);
 
-// wait for the thumbnail to load before running init
-waitForElement(waitToInitElement, async (element) => {
-  try {
-    await syncSettings();
-    init();
-  } catch (error) {
-    console.error('Error syncing settings:', error);
-  }
+
+// wait for the thumbnail to load before running init (via the checkURL function)
+waitForElement(waitToInitElement, (element) => {
+    checkURL();
+    setInterval(checkURL, 800);
 });
 
 
