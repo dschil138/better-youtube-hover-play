@@ -75,6 +75,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 // }
 
 function syncSettings() {
+  log('syncSettings');
   return new Promise((resolve, reject) => {
     chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting', 'extensionEnabled'], (data) => {
       fullHoverDisable = data.fullHoverDisable ? parseInt(data.fullHoverDisable, 10) : fullHoverDisable;
@@ -91,13 +92,14 @@ function syncSettings() {
 
 
 function fullDebug() {
-  console.log('isScrolling: ', isScrolling);
-  console.log('longPressFlag: ', longPressFlag);
-  console.log('longClickSetting: ', longClickSetting);
-  console.log('fullHoverDisable: ', fullHoverDisable);
-  console.log('longClickDebounce: ', longClickDebounce);
-  console.log('movingThumbnailPlaying: ', movingThumbnailPlaying);
-  console.log('isOtherPage: ', isOtherPage);
+  log('isScrolling: ', isScrolling);
+  log('longPressFlag: ', longPressFlag);
+  log('longClickSetting: ', longClickSetting);
+  log('fullHoverDisable: ', fullHoverDisable);
+  log('longClickDebounce: ', longClickDebounce);
+  log('movingThumbnailPlaying: ', movingThumbnailPlaying);
+  log('isOtherPage: ', isOtherPage);
+  log('isExtensionEnabled: ', extensionEnabled);
 }
 
 function isYouTubeHomePage(url) {
@@ -166,11 +168,16 @@ function sendEnterEvent(e) {
 
 
 async function init() {
+  log('init');
   isFirstRun = false;
   await syncSettings();
+  log('syncSettings done');
+  fullDebug();
+
 
   if (!extensionEnabled) { 
     // remove all listeners if extension is disabled
+    log('remove all listeners & returning early bc extension is disabled');
     document.querySelectorAll(mainElements).forEach(element => {
       element.removeEventListener('mouseenter', handleMouseEnter, true);
       element.removeEventListener('mouseleave', handleMouseLeave, true);
@@ -178,10 +185,13 @@ async function init() {
     window.removeEventListener('mousedown', handleMouseDown);
     window.removeEventListener('mouseup', handleMouseUp);
     window.removeEventListener('click', handleMouseClick, true);
+    observed = false;
     return; 
   }
+  log('passed extensionEnabled check');
 
   if (!observed) {
+    log('observed is false, adding observer');
     observeDOMChanges();
   }
 

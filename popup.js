@@ -1,4 +1,4 @@
-function getExtensionEnabled() {
+function getExtensionEnabledValue() {
   return new Promise((resolve, reject) => {
     chrome.storage.sync.get('extensionEnabled', function(data) {
       if (chrome.runtime.lastError) {
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const toggleSwitch = document.getElementById('toggleSwitch');
     const optionButtons = document.querySelectorAll('.option-button');
 
-    let extensionEnabled = await getExtensionEnabled();
+    let extensionEnabled = await getExtensionEnabledValue();
     console.log('extensionEnabled', extensionEnabled);
 
     toggleSwitch.checked = extensionEnabled;
@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           btn.removeEventListener('click', buttonClickHandler); // remove event listeners when disabled
         });
       }
-      setTimeout(runInit, 50);
+      setTimeout(runInit, 550);
     }
 
 
