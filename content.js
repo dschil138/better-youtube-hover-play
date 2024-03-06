@@ -16,7 +16,7 @@ let isFirstRun = true;
 let startTime;
 let observed = false;
 
-const isDebugMode = true;
+const isDebugMode = false;
 
 function log(...args) {
   if (isDebugMode) {
@@ -55,24 +55,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   return true;
 });
 
-
-// function syncSettings() {
-//   return new Promise((resolve, reject) => {
-//     chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting'], function(data) {
-//       if (data.fullHoverDisable) {
-//         fullHoverDisable = parseInt(data.fullHoverDisable, 10);
-//       }
-//       if (data.longClickSetting) {
-//         longClickSetting = parseInt(data.longClickSetting, 10);
-//       }
-      
-//       chrome.storage.sync.get('extensionEnabled', function(data) {
-//         extensionEnabled = data.extensionEnabled !== undefined ? data.extensionEnabled : true;
-//         resolve();
-//       });
-//     });
-//   });
-// }
 
 function syncSettings() {
   log('syncSettings');
@@ -141,10 +123,17 @@ function sendEnterEvent(e) {
   if (longClickSetting && !longPressFlag) { return; }
 
   let elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
+  if (elementsBelow.some(el => el.id === 'movie_player')){
+    console.log("caught");
+    return;
+  } else {
 
   for (let elemBelow of elementsBelow) {
     if (elemBelow) {
 
+      if (elemBelow.id === 'movie_player' || elemBelow.id === 'container') {
+        return;
+      }
       if (isOtherPage) {
         elemBelow.dispatchEvent(new MouseEvent('mouseleave', {
           bubbles: true,
@@ -163,6 +152,7 @@ function sendEnterEvent(e) {
       }
     }
   }
+}
 }
 
 

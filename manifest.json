@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Stop YouTube Hover Previews",
-  "version": "2.1",
-  "description": "Disable the video previews that play when you hover over a video thumbnail on YouTube",
-  "permissions": ["activeTab", "storage"],
+  "name": "Better YouTube Previews",
+  "version": "2.2",
+  "description": "Stup YouTube video previews from playing on hover, and play them on long click instead",
+  "permissions": ["activeTab", "storage", "tabs", "scripting"],
+  "host_permissions": [
+    "*://www.youtube.com/*"
+  ],
   "content_scripts": [
     {
       "matches": ["*://www.youtube.com/*"],
@@ -15,11 +18,14 @@
   "action": {
     "default_popup": "popup.html"
   },
+  "background": {
+    "service_worker": "background.js"
+  },
   "icons": {
-    "16": "images/icon-16.png",
-    "32": "images/icon-32.png",
-    "48": "images/icon-48.png",
-    "64": "images/icon-64.png",
-    "128": "images/icon-128.png"
+    "16": "images/shadow-16.png",
+    "32": "images/shadow-32.png",
+    "48": "images/shadow-48.png",
+    "64": "images/shadow-64.png",
+    "128": "images/shadow-128.png"
   }
 }
