@@ -15,7 +15,7 @@ let extensionEnabled = true;
 let isFirstRun = true;
 let startTime;
 let observed = false;
-let longClickDuration = 500;
+let longClickDuration = 550;
 
 const isDebugMode = true;
 
@@ -61,12 +61,10 @@ function syncSettings() {
   log('syncSettings');
   return new Promise((resolve, reject) => {
     const wasEnabled = extensionEnabled;
-    chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting', 'extensionEnabled', 'longClickDuration'], (data) => {
+    chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting', 'extensionEnabled'], (data) => {
       fullHoverDisable = data.fullHoverDisable ? parseInt(data.fullHoverDisable, 10) : fullHoverDisable;
       longClickSetting = data.longClickSetting ? parseInt(data.longClickSetting, 10) : longClickSetting;
       extensionEnabled = data.extensionEnabled !== undefined ? data.extensionEnabled : true;
-      // longClickDuration = data.longClickDuration ? parseInt(data.longClickDuration, 10) : longClickDuration;
-      longClickDuration = Math.max(50, Math.min(3000, data.longClickDuration ? parseInt(data.longClickDuration, 10) : longClickDuration));
       if (wasEnabled !== extensionEnabled && extensionEnabled) {
         init();
       }
