@@ -25,6 +25,22 @@
       <div class="description">Previews play from a long click on a video, never from hover<br><span>(recommended)</span></div>
       <div class="description">Previews never play</div>
     </div>
+    <div class="duration-button-group button-group">
+      <p>Long Click Duration</p>
+      <div class="number-input">
+        <input type="number" id="long-click-duration" class="quantity-box" step="1" min="50" max="2000" value="500">
+        <div class="adjustment-button-container">
+          <button id="increment-duration" class="svg-button">
+            <svg viewBox="0 0 10 5" width="10" height="5"><polygon points="0,5 5,0 10,5" fill="currentColor"/></svg>
+          </button>
+          <button id="decrement-duration" class="svg-button">
+              <svg viewBox="0 0 10 5" width="10" height="5"><polygon points="0,0 5,5 10,0" fill="currentColor"/></svg>
+          </button>
+        </div>
+      </div>
+      <span style="margin-top: 2.5em !important;"><center><small>(milliseconds)</small></center></span>
+
+      </div>
   </div>
   <script src="popup.js"></script>
 </body>
