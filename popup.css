@@ -53,6 +53,12 @@ span {
   justify-content: center;
   margin: 0 40px;
 }
+.adjustment-button-container {
+  display: flex; 
+  flex-direction: column; /* Stack buttons vertically */
+  margin-left: 0.15em;
+  /* margin-right: 0.6em; */
+}
 
 .switch-container {
   margin: 10px 0;
@@ -66,6 +72,32 @@ span {
   width: 54px;
   height: 32px;
 }
+
+.number-input {
+  display: flex;
+  justify-content: center;
+  align-items: center; /* Center-align vertically */
+  width: 6.5em;
+  margin: auto;
+  margin-bottom: 0.4em;
+}
+
+
+
+
+.button-group {
+  display: row;
+  flex-direction: column;
+  padding-right: 5px;
+  padding-left: 5px;
+  margin: 0.05em 0;
+}
+
+
+
+
+
+
 
 
 .option-button {
@@ -95,6 +127,38 @@ span {
 }
 
 
+
+.quantity-box {
+  width: 2.2em; 
+  height: 1.5em;
+  font-size: 18px; 
+  text-align: center;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  border: 1px solid #2196F3; 
+  border-radius: 4px;
+}
+
+.quantity-box::-webkit-outer-spin-button, .quantity-box::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+.duration-button-group {
+  display: row;
+  flex-direction: column;
+  padding-right: 5px;
+  padding-left: 5px;
+  margin: 0.05em 0;
+}
+
+/* .duration-button-group {
+  margin-left: 2em !important;
+  margin-right: 2em !important;
+} 
+ */
 
 
 
@@ -249,4 +313,28 @@ label {
   display: block;
   margin-bottom: 5px;
   text-align: center;
+
+}
+.svg-button {
+  width: 1.3em; /* Adjust width as needed */
+  height: 0.9em; /* Adjust height for half of the input box to stack properly */
+  margin-bottom: 0.05em; /* Space between buttons */
+  background-color: white;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  border-radius: 4px;
+}
+
+.svg-button:last-child {
+  margin-bottom: 0; /* No margin for the last button */
+}
+
+.svg-button svg {
+  display: block; /* To prevent inline SVG aligning issues */
+  margin: auto; /* To center SVG in the button */
 }

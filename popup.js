@@ -12,7 +12,18 @@ function getExtensionEnabledValue() {
 
 
 
+
+
 document.addEventListener('DOMContentLoaded', async function () {
+  let addedListeners = false;
+
+  function handleInput(inputId, storageKey) {
+    const inputElement = document.querySelector(inputId);
+        const inputValue = inputElement.value;
+        chrome.storage.sync.set({[storageKey]: inputValue});
+        runInit();
+  }
+
 
   function runInit() {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -47,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       async function getOptionValue() {
         return new Promise((resolve, reject) => {
-          chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting'], function (data) {
+          chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting', 'longClickDuration'], function (data) {
             chrome.storage.sync.get(['optionValue'], function (data) {
               const optionValue = data.optionValue || '2';
               if (extensionEnabled) {
@@ -102,12 +113,60 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Load previous setting for the buttons
-    chrome.storage.sync.get(['optionValue'], function (data) {
+    chrome.storage.sync.get(['optionValue', 'longClickDuration'], function (data) {
       const optionValue = data.optionValue || '2';
+      const longClickDuration = data.longClickDuration || 500;
+
       if (extensionEnabled) {
         document.querySelector(`[option-value="${optionValue}"]`).classList.add('selected');
+        document.getElementById('long-click-duration').value = longClickDuration;
+
       }
     });
+
+
+
+
+
+
+
+
+
+
+
+  if (!addedListeners) {
+
+    function addQuantityHandlers(quantityId, incrementId, decrementId, storageKey, handleInput) {
+      const quantityElement = document.getElementById(quantityId);
+      const incrementElement = document.getElementById(incrementId);
+      const decrementElement = document.getElementById(decrementId);
+
+
+      incrementElement.addEventListener('click', function() {
+        quantityElement.value = +(parseFloat(quantityElement.value) + 10).toFixed(2);
+        handleInput(`#${quantityId}`, storageKey);
+      });
+
+      decrementElement.addEventListener('click', function() {
+        quantityElement.value = +(parseFloat(quantityElement.value) - 10).toFixed(2);
+        handleInput(`#${quantityId}`, storageKey);
+      });
+
+      quantityElement.addEventListener('input', function() {
+        handleInput(`#${quantityId}`, storageKey);
+      });
+    }
+
+    addQuantityHandlers('long-click-duration', 'increment-duration', 'decrement-duration', 'longClickDuration', handleInput);
+
+    addedListeners = true;
+  }
+
+
+
+
+
+
 
 
 
@@ -116,6 +175,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     function buttonClickHandler(buttonGroup) {
       // Use event target instead of 'this'
       let optionValue = event.target.getAttribute('option-value');
+      let longClickDuration = document.getElementById('long-click-duration').value;
     
       if (!extensionEnabled) {
         return;
@@ -127,6 +187,14 @@ document.addEventListener('DOMContentLoaded', async function () {
       let settings = mapOptionToSettings(optionValue);
     
       chrome.storage.sync.set({ optionValue: optionValue, ...settings }, function () {
+        if (chrome.runtime.lastError) {
+          console.error("Error setting value:", chrome.runtime.lastError);
+        } else {
+          runInit();
+        }
+      });
+
+      chrome.storage.sync.set({ longClickDuration: longClickDuration }, function () {
         if (chrome.runtime.lastError) {
           console.error("Error setting value:", chrome.runtime.lastError);
         } else {
