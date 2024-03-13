@@ -55,9 +55,8 @@ span {
 }
 .adjustment-button-container {
   display: flex; 
-  flex-direction: column; /* Stack buttons vertically */
+  flex-direction: column;
   margin-left: 0.15em;
-  /* margin-right: 0.6em; */
 }
 
 .switch-container {
@@ -76,13 +75,11 @@ span {
 .number-input {
   display: flex;
   justify-content: center;
-  align-items: center; /* Center-align vertically */
+  align-items: center;
   width: 6.5em;
   margin: auto;
   margin-bottom: 0.4em;
 }
-
-
 
 
 .button-group {
@@ -92,11 +89,6 @@ span {
   padding-left: 5px;
   margin: 0.05em 0;
 }
-
-
-
-
-
 
 
 
@@ -154,20 +146,6 @@ span {
   margin: 0.05em 0;
 }
 
-/* .duration-button-group {
-  margin-left: 2em !important;
-  margin-right: 2em !important;
-} 
- */
-
-
-
-
-
-
-
-
-
 
 
 
@@ -194,7 +172,9 @@ span {
   height: 0;
 }
 
-/* The slider */
+
+
+
 .slider {
   position: absolute;
   cursor: pointer;
@@ -271,7 +251,7 @@ input:focus + .small-slider {
 input:checked + .small-slider:before {
   -webkit-transform: translateX(21px);
   -ms-transform: translateX(21px);
-  transform: translateX(21px);
+  transform: translateX(21px); 
 }
 
 /* Rounded sliders */
@@ -291,6 +271,22 @@ input:checked + .small-slider:before {
 }
 
 
+
+.slider-input {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.value-display {
+  text-align: center;
+  margin-top: 5px;
+  margin-bottom: 5px;
+}
+
+
+
+
+
 .new-container {
   display: flex;
   flex-direction: row;
@@ -308,7 +304,6 @@ input:checked + .small-slider:before {
   margin-bottom: 0.5em !important;
 }
 
-/* Styling for the label */
 label {
   display: block;
   margin-bottom: 5px;
@@ -316,9 +311,9 @@ label {
 
 }
 .svg-button {
-  width: 1.3em; /* Adjust width as needed */
-  height: 0.9em; /* Adjust height for half of the input box to stack properly */
-  margin-bottom: 0.05em; /* Space between buttons */
+  width: 1.3em;
+  height: 0.9em;
+  margin-bottom: 0.05em;
   background-color: white;
   border: none;
   padding: 0;
@@ -331,10 +326,10 @@ label {
 }
 
 .svg-button:last-child {
-  margin-bottom: 0; /* No margin for the last button */
+  margin-bottom: 0;
 }
 
 .svg-button svg {
-  display: block; /* To prevent inline SVG aligning issues */
-  margin: auto; /* To center SVG in the button */
+  display: block; /* prevent inline SVG alignment issues */
+  margin: auto;
 }

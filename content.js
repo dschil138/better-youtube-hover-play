@@ -15,9 +15,9 @@ let extensionEnabled = true;
 let isFirstRun = true;
 let startTime;
 let observed = false;
-let longClickDuration = 500;
+let longClickDuration = 900;
 
-const isDebugMode = true;
+const isDebugMode = false;
 
 function log(...args) {
   if (isDebugMode) {
@@ -58,15 +58,16 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
 
 
 function syncSettings() {
-  log('syncSettings');
+  log('Syncing settings...');
   return new Promise((resolve, reject) => {
     const wasEnabled = extensionEnabled;
-    chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting', 'extensionEnabled', 'longClickDuration'], (data) => {
+    chrome.storage.sync.get(['fullHoverDisable', 'longClickSetting', 'optionValue', 'extensionEnabled', 'longClickDuration'], (data) => {
       fullHoverDisable = data.fullHoverDisable ? parseInt(data.fullHoverDisable, 10) : fullHoverDisable;
       longClickSetting = data.longClickSetting ? parseInt(data.longClickSetting, 10) : longClickSetting;
+      optionValue = data.optionValue ? parseInt(data.optionValue, 10) : optionValue;
       extensionEnabled = data.extensionEnabled !== undefined ? data.extensionEnabled : true;
       // longClickDuration = data.longClickDuration ? parseInt(data.longClickDuration, 10) : longClickDuration;
-      longClickDuration = Math.max(50, Math.min(3000, data.longClickDuration ? parseInt(data.longClickDuration, 10) : longClickDuration));
+      longClickDuration = Math.max(50, Math.min(900, data.longClickDuration ? parseInt(data.longClickDuration, 10) : longClickDuration));
       if (wasEnabled !== extensionEnabled && extensionEnabled) {
         init();
       }
@@ -102,7 +103,7 @@ function checkURL() {
   if (isYouTubeHomePage(url) || url.startsWith("https://www.youtube.com/results") || url.startsWith("https://www.youtube.com/feed/subscriptions")) {
 
     if (isOtherPage || isFirstRun) {
-      log('isYouTubeHomePage');
+      // log('isYouTubeHomePage');
       observed = false;
       isOtherPage = false;
       movingThumbnailPlaying = false;
@@ -112,7 +113,7 @@ function checkURL() {
     
   else { // it's not one of those URLs
     if (!isOtherPage || isFirstRun) {
-      log('isOtherPage');
+      // log('is NOT Youtube HomePage');
       observed = false;
       isOtherPage = true;
       movingThumbnailPlaying = false;
@@ -151,6 +152,17 @@ function sendEnterEvent(e) {
 
       if ((!movingThumbnailPlaying) || longPressFlag) { // making preview not restart when hitting mute, etc
 
+        // flash white to indicate the preview is starting
+        if (elemBelow.tagName === 'IMG' && elemBelow.classList.contains('yt-core-image')) {
+          setTimeout(() => {
+            elemBelow.style.filter = 'brightness(1.4)';
+            setTimeout(() => {
+              elemBelow.style.filter = '';
+            }, 100);
+          },30);
+        }
+
+
         elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
           bubbles: true,
           cancelable: true,
@@ -168,13 +180,13 @@ async function init() {
   log('init');
   isFirstRun = false;
   await syncSettings();
-  log('syncSettings done');
-  fullDebug();
+  // log('syncSettings done');
+  // fullDebug();
 
 
   if (!extensionEnabled) { 
     // remove all listeners if extension is disabled
-    log('remove all listeners & returning early bc extension is disabled');
+    log('remove all listeners & returning early, bc extension is disabled');
     document.querySelectorAll(mainElements).forEach(element => {
       element.removeEventListener('mouseenter', handleMouseEnter, true);
       element.removeEventListener('mouseleave', handleMouseLeave, true);
@@ -185,6 +197,7 @@ async function init() {
     observed = false;
     return; 
   }
+
   log('passed extensionEnabled check');
 
   if (!observed) {
@@ -194,7 +207,6 @@ async function init() {
 
   // Monitor mouse movement to detect if the user is trying to trigger a preview that they scrolled to
   window.addEventListener('mousemove', (e) => {
-
     const distance = Math.sqrt(
       Math.pow(e.clientX - lastKnownMousePosition.x, 2) +
       Math.pow(e.clientY - lastKnownMousePosition.y, 2)
@@ -212,11 +224,8 @@ async function init() {
     isScrolling = true;
   }, { passive: true });
 
-
   window.addEventListener('mousedown', handleMouseDown);
-
   window.addEventListener('mouseup', handleMouseUp);
-
   window.addEventListener('click', handleMouseClick, true);
 
 }
@@ -259,7 +268,7 @@ function handleMouseDown(e) {
 // stop the long press timer, and reset some flags
 function handleMouseUp(e) {
   clearTimeout(longPressTimer);
-  const duration = Date.now() - startTime; // Calculate the duration
+  const duration = Date.now() - startTime;
   log('Click duration: ' + duration + ' ms');
   setTimeout(function () {
     longPressFlag = false;
@@ -280,23 +289,22 @@ function handleMouseClick(e) {
 
   // Otherwise, if it's a long click, don't open the link
   if (longPressFlag && extensionEnabled) {
-    log('preventDefault 2');
+    log('preventDefault click');
     e.preventDefault();
     e.stopPropagation();
   }
 }
 
-// on mouseenter, we decide whether or not to stop the preview based on the settings.
+// on mouseenter, decide whether or not to stop the preview based on the settings.
 // Special care must be taken for pages that play 'moving thumbnail' previews, as the setup is more complex
 function handleMouseEnter(e) {
-  log('mouseenter');
   //moving thumbnails have invisible elements that can be "entered" while it plays, so we don't want those to stop the preview
   if (isOtherPage && movingThumbnailPlaying) { 
-    log('returning early');
+    log('returning early, not stopping preview');
     return; 
   }
   
-  if (isScrolling || (!longPressFlag && longClickSetting) || (fullHoverDisable && !longClickSetting)) {
+  if (isScrolling || (!longPressFlag && longClickSetting) || (optionValue == 3) || (optionValue == 2 && !longPressFlag)) {
     log('preventDefault main');
     e.preventDefault();
     e.stopImmediatePropagation();
