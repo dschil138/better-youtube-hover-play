@@ -46,8 +46,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
 
-
-
   try {
     const toggleSwitch = document.getElementById('toggleSwitch');
     const optionButtons = document.querySelectorAll('.option-button');
