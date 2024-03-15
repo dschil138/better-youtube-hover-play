@@ -36,3 +36,11 @@ async function handleTabActivation(activeInfo) {
         }
     }
 }
+
+
+// URL listener that listens for changes to the URL of the current tab, and if there is any change, it sends the messate "urlChange" to the content script
+chrome.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
+    if (changeInfo.url) {
+        chrome.tabs.sendMessage(tabId, { message: "urlChange" });
+    }
+});

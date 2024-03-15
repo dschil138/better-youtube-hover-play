@@ -15,7 +15,7 @@ let extensionEnabled = true;
 let isFirstRun = true;
 let startTime;
 let observed = false;
-let longClickDuration = 900;
+let longClickDuration = 500;
 
 const isDebugMode = false;
 
@@ -25,11 +25,27 @@ function log(...args) {
   }
 }
 
+// url listener for any change in URL
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === "urlChange") {
+    log("remove all listeners & returning early, bc it's a new page");
+    document.querySelectorAll(mainElements).forEach(element => {
+      element.removeEventListener('mouseenter', handleMouseEnter, true);
+      element.removeEventListener('mouseleave', handleMouseLeave, true);
+    });
+    window.removeEventListener('mousedown', handleMouseDown);
+    window.removeEventListener('mouseup', handleMouseUp);
+    window.removeEventListener('click', handleMouseClick, true);
+    init();
+    sendResponse({ result: "Init function rerun" });
+  }
+});
+
 const mainElements = [
   // main page
   '#dismissible.style-scope', 
   // channel pages
-  'ytd-rich-grid-media.style-scope', 
+  'ytd-item-section-renderer',
   // watch pages
   'ytd-compact-video-renderer',
 ];
@@ -154,14 +170,11 @@ function sendEnterEvent(e) {
 
         // flash white to indicate the preview is starting
         if (elemBelow.tagName === 'IMG' && elemBelow.classList.contains('yt-core-image')) {
+          elemBelow.style.filter = 'brightness(1.4)';
           setTimeout(() => {
-            elemBelow.style.filter = 'brightness(1.4)';
-            setTimeout(() => {
-              elemBelow.style.filter = '';
-            }, 100);
-          },30);
+            elemBelow.style.filter = '';
+          }, 100);
         }
-
 
         elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
           bubbles: true,
