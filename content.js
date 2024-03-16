@@ -1,3 +1,4 @@
+let isDebugMode = false;
 let lastKnownMousePosition = { x: 0, y: 0 };
 let isScrolling = true;
 let longPressFlag = false;
@@ -16,30 +17,11 @@ let isFirstRun = true;
 let startTime;
 let observed = false;
 let longClickDuration = 500;
+let listenersAdded = false;
+let containerObserver;
 
-const isDebugMode = false;
-
-function log(...args) {
-  if (isDebugMode) {
-    console.log(...args);
-  }
-}
-
-// url listener for any change in URL
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === "urlChange") {
-    log("remove all listeners & returning early, bc it's a new page");
-    document.querySelectorAll(mainElements).forEach(element => {
-      element.removeEventListener('mouseenter', handleMouseEnter, true);
-      element.removeEventListener('mouseleave', handleMouseLeave, true);
-    });
-    window.removeEventListener('mousedown', handleMouseDown);
-    window.removeEventListener('mouseup', handleMouseUp);
-    window.removeEventListener('click', handleMouseClick, true);
-    init();
-    sendResponse({ result: "Init function rerun" });
-  }
-});
+// uncomment to enable debug mode
+isDebugMode = true;
 
 const mainElements = [
   // main page
@@ -54,24 +36,48 @@ const waitToInitElement = '#thumbnail';
 const leavingMovingThumbnailElement = '#dismissible';
 
 
-function waitForElement(selector, callback) {
-  const element = document.querySelector(selector);
-  if (element) {
-    callback(element);
-  } else {
-    setTimeout(() => waitForElement(selector, callback), 500);
+function log(...args) {
+  if (isDebugMode) {
+    console.log(...args);
   }
 }
 
 
+
+// async verion of removeListeners
+async function removeListeners() {
+  log('remove all listeners');
+  document.querySelectorAll(mainElements).forEach(element => {
+    element.removeEventListener('mouseenter', handleMouseEnter, true);
+    element.removeEventListener('mouseleave', handleMouseLeave, true);
+  }
+  );
+  window.removeEventListener('mousedown', handleMouseDown);
+  window.removeEventListener('mouseup', handleMouseUp);
+  window.removeEventListener('click', handleMouseClick, true);
+}
+
+
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  if (request.action === "runInit") {
+  if (request.action === "installInit") {
+    log("install runInit");
     init();
     sendResponse({ result: "Init function rerun" });
   }
-  return true;
+  // return true;
 });
 
+
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  if (request.action === "runInit") {
+    log("popup runInit");
+    init();
+    sendResponse({ result: "Init function rerun" });
+  }
+  // return true;
+});
+
+// -------------------- UTILS & SETUP --------------------
 
 function syncSettings() {
   log('Syncing settings...');
@@ -91,9 +97,6 @@ function syncSettings() {
     });
   });
 }
-
-
-
 
 
 function fullDebug() {
@@ -119,7 +122,7 @@ function checkURL() {
   if (isYouTubeHomePage(url) || url.startsWith("https://www.youtube.com/results") || url.startsWith("https://www.youtube.com/feed/subscriptions")) {
 
     if (isOtherPage || isFirstRun) {
-      // log('isYouTubeHomePage');
+      log('from CONTENT: isYouTubeHomePage');
       observed = false;
       isOtherPage = false;
       movingThumbnailPlaying = false;
@@ -129,7 +132,7 @@ function checkURL() {
     
   else { // it's not one of those URLs
     if (!isOtherPage || isFirstRun) {
-      // log('is NOT Youtube HomePage');
+      log('from CONTENT: is NOT Youtube HomePage');
       observed = false;
       isOtherPage = true;
       movingThumbnailPlaying = false;
@@ -138,6 +141,19 @@ function checkURL() {
   }
 }
 
+function waitForElement(selector, callback) {
+  const element = document.querySelector(selector);
+  if (element) {
+    callback(element);
+  } else {
+    setTimeout(() => waitForElement(selector, callback), 500);
+  }
+}
+
+// -------------------- END UTILS & SETUP --------------------
+
+
+// -------------------- FUNCTIONS --------------------
 
 
 // function te send mouseenter event to all elements below the mouse when user long click or momes mouse on thumbnail they scrolled to
@@ -148,103 +164,44 @@ function sendEnterEvent(e) {
 
   let elementsBelow = document.elementsFromPoint(e.clientX, e.clientY);
   if (elementsBelow.some(el => el.id === 'movie_player')){
-    console.log("caught");
+    log("caught");
     return;
   } else {
 
-  for (let elemBelow of elementsBelow) {
-    if (elemBelow) {
+    for (let elemBelow of elementsBelow) {
+      if (elemBelow) {
 
-      if (elemBelow.id === 'movie_player' || elemBelow.id === 'container') {
-        return;
-      }
-      if (isOtherPage) {
-        elemBelow.dispatchEvent(new MouseEvent('mouseleave', {
-          bubbles: true,
-          cancelable: true,
-          view: window
-        }));
-      }
-
-      if ((!movingThumbnailPlaying) || longPressFlag) { // making preview not restart when hitting mute, etc
-
-        // flash white to indicate the preview is starting
-        if (elemBelow.tagName === 'IMG' && elemBelow.classList.contains('yt-core-image')) {
-          elemBelow.style.filter = 'brightness(1.4)';
-          setTimeout(() => {
-            elemBelow.style.filter = '';
-          }, 100);
+        if (elemBelow.id === 'movie_player' || elemBelow.id === 'container') {
+          return;
+        }
+        if (isOtherPage) {
+          elemBelow.dispatchEvent(new MouseEvent('mouseleave', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          }));
         }
 
-        elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
-          bubbles: true,
-          cancelable: true,
-          view: window
-        }));
+        if ((!movingThumbnailPlaying) || longPressFlag) { // making preview not restart when hitting mute, etc
+
+          // flash white to indicate the preview is starting
+          if (elemBelow.tagName === 'IMG' && elemBelow.classList.contains('yt-core-image')) {
+            elemBelow.style.filter = 'brightness(1.4)';
+            setTimeout(() => {
+              elemBelow.style.filter = '';
+            }, 100);
+          }
+
+          elemBelow.dispatchEvent(new MouseEvent('mouseenter', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+          }));
+        }
       }
     }
   }
 }
-}
-
-
-
-async function init() {
-  log('init');
-  isFirstRun = false;
-  await syncSettings();
-  // log('syncSettings done');
-  // fullDebug();
-
-
-  if (!extensionEnabled) { 
-    // remove all listeners if extension is disabled
-    log('remove all listeners & returning early, bc extension is disabled');
-    document.querySelectorAll(mainElements).forEach(element => {
-      element.removeEventListener('mouseenter', handleMouseEnter, true);
-      element.removeEventListener('mouseleave', handleMouseLeave, true);
-    });
-    window.removeEventListener('mousedown', handleMouseDown);
-    window.removeEventListener('mouseup', handleMouseUp);
-    window.removeEventListener('click', handleMouseClick, true);
-    observed = false;
-    return; 
-  }
-
-  log('passed extensionEnabled check');
-
-  if (!observed) {
-    log('observed is false, adding observer');
-    observeDOMChanges();
-  }
-
-  // Monitor mouse movement to detect if the user is trying to trigger a preview that they scrolled to
-  window.addEventListener('mousemove', (e) => {
-    const distance = Math.sqrt(
-      Math.pow(e.clientX - lastKnownMousePosition.x, 2) +
-      Math.pow(e.clientY - lastKnownMousePosition.y, 2)
-    );
-    
-    if (isScrolling && distance > mouseSensitivity && !fullHoverDisable) {
-      isScrolling = false;
-      sendEnterEvent(e);
-    }
-    lastKnownMousePosition = { x: e.clientX, y: e.clientY };
-  });
-
-
-  window.addEventListener('wheel', () => {
-    isScrolling = true;
-  }, { passive: true });
-
-  window.addEventListener('mousedown', handleMouseDown);
-  window.addEventListener('mouseup', handleMouseUp);
-  window.addEventListener('click', handleMouseClick, true);
-
-}
-
-
-
 
 function addMouseEnterListeners(elements) {
   elements.forEach(element => {
@@ -261,6 +218,38 @@ function addMouseLeaveListeners(elements) {
   });
 }
 
+function observeDOMChanges(containerElement) {
+  observed = true;
+  const selectors = mainElements;
+
+  const handleNode = (node, isDirectChild) => {
+    if (node.nodeType === 1) {
+      if (selectors.some(selector => node.matches(selector))) {
+        addMouseEnterListeners([node]);
+        if (isOtherPage) addMouseLeaveListeners([node]);
+      } else if (isDirectChild) {
+        Array.from(node.children).forEach(child => {
+          if (selectors.some(selector => child.matches(selector))) {
+            addMouseEnterListeners([child]);
+            if (isOtherPage) addMouseLeaveListeners([child]);
+          }
+        });
+      }
+    }
+  };
+  document.querySelectorAll(selectors).forEach(node => handleNode(node, true));
+
+  containerObserver = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => handleNode(node, false));
+    });
+  }).observe(containerElement, { childList: true, subtree: true });
+}
+
+// -------------------- END FUNCTIONS --------------------
+
+
+// -------------------- HANDLERS --------------------
 
 // Listening For long press, sending mouseenter if so, to trigger preview
 function handleMouseDown(e) {
@@ -332,37 +321,72 @@ function handleMouseLeave(e) {
   }
 }
 
+// -------------------- END HANDLERS --------------------
 
-function observeDOMChanges() {
-  observed = true;
-  const selectors = mainElements;
+// -------------------- INIT --------------------
 
-  const handleNode = (node, isDirectChild) => {
-    if (node.nodeType === 1) {
-      if (selectors.some(selector => node.matches(selector))) {
-        addMouseEnterListeners([node]);
-        if (isOtherPage) addMouseLeaveListeners([node]);
-      } else if (isDirectChild) {
-        Array.from(node.children).forEach(child => {
-          if (selectors.some(selector => child.matches(selector))) {
-            addMouseEnterListeners([child]);
-            if (isOtherPage) addMouseLeaveListeners([child]);
-          }
-        });
+async function init() {
+  log('init');
+  isFirstRun = false;
+  // get element by id page-manager
+  const pageManager = document.getElementById('page-manager');
+  await syncSettings();
+
+    // remove all listeners if extension is disabled
+  await removeListeners();
+
+  // log('remove all listeners');
+  // document.querySelectorAll(mainElements).forEach(element => {
+  //   element.removeEventListener('mouseenter', handleMouseEnter, true);
+  //   element.removeEventListener('mouseleave', handleMouseLeave, true);
+  // });
+  // window.removeEventListener('mousedown', handleMouseDown);
+  // window.removeEventListener('mouseup', handleMouseUp);
+  // window.removeEventListener('click', handleMouseClick, true);
+  // window.removeEventListener('mousemove', handleMouseMove);
+  // window.removeEventListener('wheel', handleWheel);
+
+  if (containerObserver) {
+    containerObserver.disconnect();
+    containerObserver = null; // Clear the reference to indicate it's no longer observing
+  }
+  if (!extensionEnabled) { 
+    log('extension is disabled, returning early');
+    return; 
+  } else {
+      log('passed extensionEnabled check');
+
+      if (!containerObserver) {
+        log('observed is false, adding observer');
+        observeDOMChanges(pageManager);
       }
-    }
-  };
-  document.querySelectorAll(selectors).forEach(node => handleNode(node, true));
 
-  new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => handleNode(node, false));
-    });
-  }).observe(document.body, { childList: true, subtree: true });
+      // Monitor mouse movement to detect if the user is trying to trigger a preview that they scrolled to
+      window.addEventListener('mousemove', (e) => {
+        const distance = Math.sqrt(
+          Math.pow(e.clientX - lastKnownMousePosition.x, 2) +
+          Math.pow(e.clientY - lastKnownMousePosition.y, 2)
+        );
+        
+        if (isScrolling && distance > mouseSensitivity && !fullHoverDisable) {
+          isScrolling = false;
+          sendEnterEvent(e);
+        }
+        lastKnownMousePosition = { x: e.clientX, y: e.clientY };
+      });
+
+
+      window.addEventListener('wheel', () => {
+        isScrolling = true;
+      }, { passive: true });
+
+      window.addEventListener('mousedown', handleMouseDown);
+      window.addEventListener('mouseup', handleMouseUp);
+      window.addEventListener('click', handleMouseClick, true);
+
+  }
+
 }
-
-
-
 
 
 // wait for the thumbnail to load before running init (via the checkURL function)
@@ -371,7 +395,7 @@ waitForElement(waitToInitElement, (element) => {
     setInterval(checkURL, 800);
 });
 
-
+// -------------------- END INIT --------------------
 
 
 
