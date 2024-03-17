@@ -27,9 +27,12 @@ const mainElements = [
   // main page
   '#dismissible.style-scope', 
   // channel pages
-  'ytd-item-section-renderer',
-  // watch pages
+  // 'ytd-item-section-renderer',
   'ytd-compact-video-renderer',
+  'ytd-video-renderer',
+
+  // watch pages
+  // 'ytd-compact-video-renderer',
 ];
 
 const waitToInitElement = '#thumbnail';
@@ -46,7 +49,7 @@ function log(...args) {
 
 // async verion of removeListeners
 async function removeListeners() {
-  log('remove all listeners');
+  console.log('remove all hover listeners');
   document.querySelectorAll(mainElements).forEach(element => {
     element.removeEventListener('mouseenter', handleMouseEnter, true);
     element.removeEventListener('mouseleave', handleMouseLeave, true);
@@ -218,30 +221,58 @@ function addMouseLeaveListeners(elements) {
   });
 }
 
+// function observeDOMChanges(containerElement) {
+//   observed = true;
+//   const selectors = mainElements;
+
+//   const handleNode = (node, isDirectChild) => {
+//     if (node.nodeType === 1) {
+//       if (selectors.some(selector => node.matches(selector))) {
+//         addMouseEnterListeners([node]);
+//         if (isOtherPage) addMouseLeaveListeners([node]);
+//       } else if (isDirectChild) {
+//         Array.from(node.children).forEach(child => {
+//           if (selectors.some(selector => child.matches(selector))) {
+//             addMouseEnterListeners([child]);
+//             if (isOtherPage) addMouseLeaveListeners([child]);
+//           }
+//         });
+//       }
+//     }
+//   };
+//   document.querySelectorAll(selectors).forEach(node => handleNode(node, true));
+
+//   containerObserver = new MutationObserver(mutations => {
+//     mutations.forEach(mutation => {
+//       mutation.addedNodes.forEach(node => handleNode(node, false));
+//     });
+//   }).observe(containerElement, { childList: true, subtree: true });
+// }
+
+
 function observeDOMChanges(containerElement) {
   observed = true;
   const selectors = mainElements;
 
-  const handleNode = (node, isDirectChild) => {
+  // Function to handle individual nodes
+  const handleNode = (node) => {
+    // Check if the node is an element node
     if (node.nodeType === 1) {
+      // Check if the node itself matches any of the selectors
       if (selectors.some(selector => node.matches(selector))) {
         addMouseEnterListeners([node]);
         if (isOtherPage) addMouseLeaveListeners([node]);
-      } else if (isDirectChild) {
-        Array.from(node.children).forEach(child => {
-          if (selectors.some(selector => child.matches(selector))) {
-            addMouseEnterListeners([child]);
-            if (isOtherPage) addMouseLeaveListeners([child]);
-          }
-        });
       }
     }
   };
-  document.querySelectorAll(selectors).forEach(node => handleNode(node, true));
 
+  // Attach listeners to elements that currently match the selectors
+  document.querySelectorAll(selectors.join(', ')).forEach(node => handleNode(node));
+
+  // Observe the container for added nodes and handle them
   containerObserver = new MutationObserver(mutations => {
     mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => handleNode(node, false));
+      mutation.addedNodes.forEach(node => handleNode(node));
     });
   }).observe(containerElement, { childList: true, subtree: true });
 }
@@ -301,6 +332,7 @@ function handleMouseClick(e) {
 // Special care must be taken for pages that play 'moving thumbnail' previews, as the setup is more complex
 function handleMouseEnter(e) {
   //moving thumbnails have invisible elements that can be "entered" while it plays, so we don't want those to stop the preview
+  log('mouseenter', e.target);
   if (isOtherPage && movingThumbnailPlaying) { 
     log('returning early, not stopping preview');
     return; 
@@ -316,6 +348,7 @@ function handleMouseEnter(e) {
 
 // mouseleave is only used on channel pages, to stop the preview
 function handleMouseLeave(e) {
+  log('mouseleave', e.target);
   if (e.target.matches(leavingMovingThumbnailElement) && !longClickDebounce) {
     movingThumbnailPlaying = false;
   }
@@ -328,30 +361,17 @@ function handleMouseLeave(e) {
 async function init() {
   log('init');
   isFirstRun = false;
-  // get element by id page-manager
   const pageManager = document.getElementById('page-manager');
   await syncSettings();
 
-    // remove all listeners if extension is disabled
-  await removeListeners();
-
-  // log('remove all listeners');
-  // document.querySelectorAll(mainElements).forEach(element => {
-  //   element.removeEventListener('mouseenter', handleMouseEnter, true);
-  //   element.removeEventListener('mouseleave', handleMouseLeave, true);
-  // });
-  // window.removeEventListener('mousedown', handleMouseDown);
-  // window.removeEventListener('mouseup', handleMouseUp);
-  // window.removeEventListener('click', handleMouseClick, true);
-  // window.removeEventListener('mousemove', handleMouseMove);
-  // window.removeEventListener('wheel', handleWheel);
-
-  if (containerObserver) {
-    containerObserver.disconnect();
-    containerObserver = null; // Clear the reference to indicate it's no longer observing
-  }
+  // remove all listeners if extension is disabled
   if (!extensionEnabled) { 
     log('extension is disabled, returning early');
+    await removeListeners();
+    if (containerObserver) {
+      containerObserver.disconnect();
+      containerObserver = null; // Clear the reference to indicate it's no longer observing
+    }
     return; 
   } else {
       log('passed extensionEnabled check');
