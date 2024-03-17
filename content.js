@@ -21,7 +21,7 @@ let listenersAdded = false;
 let containerObserver;
 
 // uncomment to enable debug mode
-isDebugMode = true;
+// isDebugMode = true;
 
 const mainElements = [
   // main page
@@ -209,45 +209,17 @@ function sendEnterEvent(e) {
 function addMouseEnterListeners(elements) {
   elements.forEach(element => {
     element.addEventListener('mouseenter', handleMouseEnter, true);
-    enterListeners++;
-    totalListeners = enterListeners + leaveListeners;
+    // enterListeners++;
+    // totalListeners = enterListeners + leaveListeners;
   });
 }
 function addMouseLeaveListeners(elements) {
   elements.forEach(element => {
     element.addEventListener('mouseleave', handleMouseLeave, true);
-    leaveListeners++;
-    totalListeners = enterListeners + leaveListeners;
+    // leaveListeners++;
+    // totalListeners = enterListeners + leaveListeners;
   });
 }
-
-// function observeDOMChanges(containerElement) {
-//   observed = true;
-//   const selectors = mainElements;
-
-//   const handleNode = (node, isDirectChild) => {
-//     if (node.nodeType === 1) {
-//       if (selectors.some(selector => node.matches(selector))) {
-//         addMouseEnterListeners([node]);
-//         if (isOtherPage) addMouseLeaveListeners([node]);
-//       } else if (isDirectChild) {
-//         Array.from(node.children).forEach(child => {
-//           if (selectors.some(selector => child.matches(selector))) {
-//             addMouseEnterListeners([child]);
-//             if (isOtherPage) addMouseLeaveListeners([child]);
-//           }
-//         });
-//       }
-//     }
-//   };
-//   document.querySelectorAll(selectors).forEach(node => handleNode(node, true));
-
-//   containerObserver = new MutationObserver(mutations => {
-//     mutations.forEach(mutation => {
-//       mutation.addedNodes.forEach(node => handleNode(node, false));
-//     });
-//   }).observe(containerElement, { childList: true, subtree: true });
-// }
 
 
 function observeDOMChanges(containerElement) {
@@ -332,7 +304,7 @@ function handleMouseClick(e) {
 // Special care must be taken for pages that play 'moving thumbnail' previews, as the setup is more complex
 function handleMouseEnter(e) {
   //moving thumbnails have invisible elements that can be "entered" while it plays, so we don't want those to stop the preview
-  log('mouseenter', e.target);
+  // log('mouseenter', e.target);
   if (isOtherPage && movingThumbnailPlaying) { 
     log('returning early, not stopping preview');
     return; 
@@ -348,7 +320,7 @@ function handleMouseEnter(e) {
 
 // mouseleave is only used on channel pages, to stop the preview
 function handleMouseLeave(e) {
-  log('mouseleave', e.target);
+  // log('mouseleave', e.target);
   if (e.target.matches(leavingMovingThumbnailElement) && !longClickDebounce) {
     movingThumbnailPlaying = false;
   }

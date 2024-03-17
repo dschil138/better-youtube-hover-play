@@ -1,9 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Better YouTube Previews",
-  "version": "2.32",
+  "version": "2.33",
   "description": "Make YouTube video previews play on long click instead of hover.",
-  // "permissions": ["activeTab", "storage", "scripting", "declarativeNetRequest"],
   "permissions": ["activeTab", "storage", "scripting"],
   "host_permissions": [
     "*://www.youtube.com/*"

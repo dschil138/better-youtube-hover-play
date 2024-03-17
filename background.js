@@ -1,12 +1,12 @@
 let alreadyOnYoutube = false;
 
-// chrome.runtime.setUninstallURL('https://davidschiller.net/uninstalled-better-youtube-previews.html', function() {
-//     if (chrome.runtime.lastError) {
-//         console.log('Error setting uninstall URL: ', chrome.runtime.lastError);
-//     } else {
-//         console.log('Uninstall URL set successfully.');
-//     }
-// });
+chrome.runtime.setUninstallURL('https://davidschiller.net/uninstalled-better-youtube-previews.html', function() {
+    if (chrome.runtime.lastError) {
+        console.log('Error setting uninstall URL: ', chrome.runtime.lastError);
+    } else {
+        console.log('Uninstall URL set successfully.');
+    }
+});
 
 
 const injectedTabIds = new Set();
