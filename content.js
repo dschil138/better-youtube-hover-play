@@ -39,6 +39,17 @@ const mainElements = [
 const watchPageVideoElement = 'ytd-channel-video-player-renderer video';
 
 
+const homepageAutoplayParentElement = 'ytd-video-masthead-ad-v3-renderer';
+const homepageAutoplayElement = '#click-target';
+
+// actual ad video? Not a html5 video element...
+// 'ytd-player#ytd-player.ytd-video-masthead-ad-primary-video-renderer'
+
+// remove 'video-playing' class from this element to stop the video?
+// ytd-video-masthead-ad-primary-video-renderer#video.ytd-video-masthead-ad-v3-renderer.video-playing
+const homepageAutoplayVideoElement = 'ytd-video-masthead-ad-primary-video-renderer#video.ytd-video-masthead-ad-v3-renderer.video-playing';
+
+const homepageAutoplayVideoElement2 = '.ytd-video-masthead-ad-primary-video-renderer';
 const waitToInitElement = '#thumbnail';
 const leavingMovingThumbnailElement = '#dismissible';
 
@@ -123,9 +134,27 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     return homePageRegex.test(url);
   }
 
+  function containsVideosInURL(url) {
+    const channelVideosRegex = /youtube\.com\/.*videos/;
+    const searchPageRegex = /youtube\.com\/.*search\?/;
+    return channelVideosRegex.test(url) && !searchPageRegex.test(url);
+
+  }
+
+  function isChannelVideosPage(url) {
+    // Matches URLs that contain '/channel/' followed by any characters, then '/videos', and ensures it does not contain '/search?'
+    const channelVideosRegex = /youtube\.com\/channel\/.+\/videos/;
+    
+  }
+  
+
 
   function checkURL() {
     const url = window.location.href;
+    const videosPage = containsVideosInURL(url);
+    if (videosPage) {
+      log('VIDEOS');
+    }
     if (isYouTubeHomePage(url) || url.startsWith("https://www.youtube.com/results") || url.startsWith("https://www.youtube.com/feed/subscriptions")) {
 
       if (isOtherPage || isFirstRun) {
@@ -238,6 +267,12 @@ function observeDOMChanges(containerElement) {
       if (selectors.some(selector => node.matches(selector))) {
         addMouseEnterListeners([node]);
         if (isOtherPage) addMouseLeaveListeners([node]);
+      } else if (node.matches(homepageAutoplayVideoElement)) {
+        log('AUTOPLAY REMOVE');
+        node.remove();
+      } else if (node.matches(homepageAutoplayVideoElement2)) {
+        log('AUTOPLAY REMOVE');
+        node.remove();
       }
     }
   };
@@ -415,6 +450,31 @@ function observeDOMChanges(containerElement) {
     log('init');
     isFirstRun = false;
     const pageManager = document.getElementById('page-manager');
+    const loadedPreview = document.querySelector('#inline-player > video');
+
+    setTimeout(() => {
+      const adAutoplay = document.querySelectorAll(homepageAutoplayVideoElement2);
+      adAutoplay.forEach((element) => {
+        log('adAutoplay element', element);
+        element.remove();
+      });
+
+      setTimeout(() => {
+        const adAutoplay2 = document.querySelectorAll(homepageAutoplayVideoElement2);
+        adAutoplay2.forEach((element) => {
+          log('adAutoplay element', element);
+          element.remove();
+        });
+      }, 1000);
+    }, 1200);
+
+    if (loadedPreview) {
+      log('loadedPreview exists');
+      log(loadedPreview);
+
+    } else {
+      log('loadedPreview does not exist');
+    }
     await syncSettings();
 
     // remove all listeners if extension is disabled
@@ -465,7 +525,7 @@ function observeDOMChanges(containerElement) {
   // wait for the thumbnail to load before running init (via the checkURL function)
   waitForElement(waitToInitElement, (element) => {
       checkURL();
-      setInterval(checkURL, 800);
+      setInterval(checkURL, 600);
   });
 
 // -------------------- END INIT --------------------
