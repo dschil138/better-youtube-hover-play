@@ -21,7 +21,7 @@ let listenersAdded = false;
 let containerObserver;
 
 // uncomment to enable debug mode
-isDebugMode = true;
+// isDebugMode = true;
 
 const mainElements = [
   // main page
@@ -42,11 +42,6 @@ const watchPageVideoElement = 'ytd-channel-video-player-renderer video';
 const homepageAutoplayParentElement = 'ytd-video-masthead-ad-v3-renderer';
 const homepageAutoplayElement = '#click-target';
 
-// actual ad video? Not a html5 video element...
-// 'ytd-player#ytd-player.ytd-video-masthead-ad-primary-video-renderer'
-
-// remove 'video-playing' class from this element to stop the video?
-// ytd-video-masthead-ad-primary-video-renderer#video.ytd-video-masthead-ad-v3-renderer.video-playing
 const homepageAutoplayVideoElement = 'ytd-video-masthead-ad-primary-video-renderer#video.ytd-video-masthead-ad-v3-renderer.video-playing';
 
 const homepageAutoplayVideoElement2 = '.ytd-video-masthead-ad-primary-video-renderer';
@@ -138,15 +133,7 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     const channelVideosRegex = /youtube\.com\/.*videos/;
     const searchPageRegex = /youtube\.com\/.*search\?/;
     return channelVideosRegex.test(url) && !searchPageRegex.test(url);
-
   }
-
-  function isChannelVideosPage(url) {
-    // Matches URLs that contain '/channel/' followed by any characters, then '/videos', and ensures it does not contain '/search?'
-    const channelVideosRegex = /youtube\.com\/channel\/.+\/videos/;
-    
-  }
-  
 
 
   function checkURL() {
@@ -259,21 +246,13 @@ function observeDOMChanges(containerElement) {
   observed = true;
   const selectors = mainElements;
 
-  // Function to handle individual nodes
   const handleNode = (node) => {
-    // Check if the node is an element node
+
     if (node.nodeType === 1) {
-      // Check if the node itself matches any of the selectors
       if (selectors.some(selector => node.matches(selector))) {
         addMouseEnterListeners([node]);
         if (isOtherPage) addMouseLeaveListeners([node]);
-      } else if (node.matches(homepageAutoplayVideoElement)) {
-        log('AUTOPLAY REMOVE');
-        node.remove();
-      } else if (node.matches(homepageAutoplayVideoElement2)) {
-        log('AUTOPLAY REMOVE');
-        node.remove();
-      }
+      } 
     }
   };
 
@@ -326,44 +305,6 @@ function observeDOMChanges(containerElement) {
     });
   }).observe(containerElement, { childList: true, subtree: true });
 }
-
-
-// function observeDOMChanges(containerElement) {
-//   const selectors = mainElements;
-
-//   const observer = new MutationObserver((mutations) => {
-//     mutations.forEach((mutation) => {
-//       mutation.addedNodes.forEach((node) => {
-//         handleNode(node);
-//         // check for channel page video
-//         if (node.nodeType === 1 && node.matches(watchPageVideoElement)) {
-//           log('pausing channel page video');
-//           node.pause(); // Pause the channel page video
-//         } else if (node.nodeType === 1 && node.querySelector(watchPageVideoElement)) {
-//           const video = node.querySelector(watchPageVideoElement);
-//           log('pausing channel page video');
-//           video.pause(); // Pause the channel page video
-//         }
-//       });
-//     });
-//   });
-
-//   const handleNode = (node) => {
-//     if (node.nodeType === 1) {
-//       if (selectors.some(selector => node.matches(selector))) {
-//         addMouseEnterListeners([node]);
-//         if (isOtherPage) addMouseLeaveListeners([node]);
-//       }
-//     }
-//   };
-  
-//   // Start
-//   observer.observe(containerElement, { childList: true, subtree: true });
-// }
-
-
-// Start observing with configuration options passed directly
-
 
 // -------------------- END FUNCTIONS --------------------
 
@@ -477,13 +418,13 @@ function observeDOMChanges(containerElement) {
     }
     await syncSettings();
 
-    // remove all listeners if extension is disabled
+    // remove all listeners and return if extension is disabled
     if (!extensionEnabled) { 
       log('extension is disabled, returning early');
       await removeListeners();
       if (containerObserver) {
         containerObserver.disconnect();
-        containerObserver = null; // Clear the reference to indicate it's no longer observing
+        containerObserver = null;
       }
       return; 
     } else {
@@ -508,7 +449,6 @@ function observeDOMChanges(containerElement) {
           lastKnownMousePosition = { x: e.clientX, y: e.clientY };
         });
 
-
         window.addEventListener('wheel', () => {
           isScrolling = true;
         }, { passive: true });
@@ -516,13 +456,11 @@ function observeDOMChanges(containerElement) {
         window.addEventListener('mousedown', handleMouseDown);
         window.addEventListener('mouseup', handleMouseUp);
         window.addEventListener('click', handleMouseClick, true);
-
     }
-
   }
 
 
-  // wait for the thumbnail to load before running init (via the checkURL function)
+  // wait for the thumbnail to load before running init (via the checkURL function), then keep checking for URL changes
   waitForElement(waitToInitElement, (element) => {
       checkURL();
       setInterval(checkURL, 600);
