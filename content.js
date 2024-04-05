@@ -19,6 +19,11 @@ let observed = false;
 let longClickDuration = 500;
 let listenersAdded = false;
 let containerObserver;
+// let dealingWithWhyButton = false;
+// let dealingWithPopup = false;
+// let mouseX = 0;
+// let mouseY = 0;
+
 
 // uncomment to enable debug mode
 // isDebugMode = true;
@@ -300,7 +305,19 @@ function observeDOMChanges(containerElement) {
             });
           }
 
-        }
+        } 
+        // else if (node.nodeType === 1 && node.querySelector('button[aria-label="Tell us why"]'))  {
+        //   const button = node.querySelector('button[aria-label="Tell us why"]');
+
+        //   if (button && !dealingWithWhyButton) {
+        //     dealingWithWhyButton = true;
+        //     setTimeout(() => {
+        //         button.click();
+        //         console.log('Clicked why button');
+        //         dealingWithWhyButton = false;
+        //     }, 200);
+        //   }
+        // }
       });
     });
   }).observe(containerElement, { childList: true, subtree: true });
@@ -468,7 +485,54 @@ function observeDOMChanges(containerElement) {
 
 // -------------------- END INIT --------------------
 
+// setTimeout(() => {
+//   console.log('running popup code');
 
+// // Get the ytd-popup-container element
+// const popupContainer = document.querySelector('ytd-popup-container');
+// console.log('popupContainer', popupContainer);
+
+// // Create a MutationObserver
+// const popupObserver = new MutationObserver((mutations) => {
+//     mutations.forEach((mutation) => {
+//         if (mutation.type === 'childList') {
+//             const targetElement = popupContainer.querySelector('tp-yt-paper-dialog.style-scope.ytd-popup-container');
+//             if (targetElement && !dealingWithPopup) {
+//                 console.log('Found the popup');
+//                 dealingWithPopup = true;
+
+//                 // // find width of element in pixels
+//                 // const elementWidth = targetElement.offsetWidth;
+//                 // console.log('elementWidth', elementWidth);
+//                 // // find height of element in pixels
+//                 // const elementHeight = targetElement.offsetHeight;
+//                 // console.log('elementHeight', elementHeight);
+
+//                 // const moveToX = lastKnownMousePosition.x - (elementWidth / 2);
+//                 // console.log('moveToX', moveToX);
+//                 // const moveToY = lastKnownMousePosition.y - (elementHeight / 2);
+//                 // console.log('moveToY', moveToY);
+
+//                 // Set the top and left properties to center the element
+//                 moveToY = (lastKnownMousePosition.y - 150);
+//                 moveToX = (lastKnownMousePosition.x-  150);
+//                 setTimeout(() => {
+//                   console.log('setting top and left');
+//                     targetElement.style.top = `${moveToY}px`;
+//                     targetElement.style.left = `${moveToX}px`;
+//                     dealingWithPopup = false;
+//                 },100);
+//             }
+//         }
+//     });
+// });
+
+//     popupObserver.observe(popupContainer, {childList: true, subtree: true});
+// }, 8000);
+
+
+// button.yt-spec-button-shape-next yt-spec-button-shape-next--filled yt-spec-button-shape-next--call-to-action yt-spec-button-shape-next--size-m
+// button.yt-spec-button-shape-next yt-spec-button-shape-next--filled yt-spec-button-shape-next--disabled yt-spec-button-shape-next--size-m
 
 
 

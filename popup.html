@@ -4,8 +4,31 @@
   <title>Popup</title>
   <link rel="stylesheet" type="text/css" href="popup.css">
 </head>
+
 <body>
+
+  <div class="header">
   <h1><center>Stop YouTube Hover Previews</center></h1>
+  <div id="version-number"></div>
+</div>
+
+  <div id="notification" class="welcome-tooltip-container" style="display: none;">
+    <div class="notification-tooltip">
+
+        <!-- <div class="pointer">&nbsp;</div> -->
+        <div class="pointer"><img src="images/puzzle-piece-arrow-4.png" style="padding-left:10px; padding-right: 10px; width: 65px; vertical-align: middle;"></div>
+        <!-- <div class="pointer">☝️</div> -->
+        <!-- <span class="heading">These settings can always be found in the extension menu, by clicking the puzzle piece icon in the top right of your browser. -->
+        <!-- <span class="heading">These settings can always be found in the extension's popup menu, by clicking the puzzle icon here. -->
+          <span class="heading">These settings can always be opened from your extension menu, by clicking the puzzle icon here.
+          <!-- <img src="images/puzzle-piece.png" style="padding-left:10px; width: 20px; vertical-align: middle;"> -->
+        </span>
+        <p>
+        </p>
+        <span class="dismiss-tooltip">x</span>
+    </div>
+</div>
+
   <div class="container">
     <div class="switch-container">
       <label for="toggleSwitch">Enable Extension:</label>
@@ -21,18 +44,35 @@
       <button class="option-button" option-value="3">Disable All Previews</button>
     </div>
     <div class="button-container">
-      <div class="description">Previews play on hover, unless you were just scrolling</div>
-      <div class="description">Previews play from a long click, never on hover<br><span>(recommended)</span></div>
+      <div class="description">Previews play on<br>hover, unless you<br>were just scrolling</div>
+      <div class="description">Previews play<br>from a long click,<br>never on hover<br><span class="recommended">(recommended)</span></div>
       <div class="description">Previews never play</div>
     </div>
       <div class="duration-button-group button-group">
-        <p>Long Click Duration</p>
+        <p style="display: inline-block !important;">&nbsp;Long Click Duration</p>
+        <div class="info-icon-up" tabindex="0"> &nbsp;?&nbsp; 
+          <span class="tooltip tooltip-up-even-more tooltip-left">How long a click must be held down to trigger the preview.<br><br>Higher values will lead to fewer accidental previews.<br><br>Default is 500ms.
+          </span>
+        </div>
         <div class="value-display"><center><div id="current-value">500 ms</div></center></div>
         <div class="slider-input">
           <input type="range" id="long-click-duration" class="duration-slider" min="200" max="1000" value="500" step="10">
         </div>
       </div>
+      <div class="multi-toggle-line">
+
+        <div id="feedback-container" class="feedback-container">
+          <div class="feedback-link" id="feedback-link">
+            <a target="_blank" href="https://docs.google.com/forms/d/e/1FAIpQLSfaCr9UKRgGPqG6jTKDegPdEtYe9FM4Gj9Fd6rZDsMilJxA5w/viewform?usp=sf_link" id="feedback-link">Feedback?</a>
+          <span class="tooltip tooltip-up-less tooltip-left-less" style="top: -4.3em !important; left: -12.5em;">Request features, report bugs, ask questions, etc</span>
+      
+          </div>
+          
+        </div>
+      </div>
+
   </div>
+  
   <script src="popup.js"></script>
 </body>
 </html>

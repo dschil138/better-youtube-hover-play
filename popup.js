@@ -3,19 +3,61 @@ let extensionEnabled, fullHoverDisable, longClickSetting, optionValue, longClick
 
 
 
-
-
 // ON DOM CONTENT LOADED
 document.addEventListener('DOMContentLoaded', async function () {
   let listenersAttached = false;
 
 
+
+// Install Notification Stuff
+  chrome.runtime.onMessage.addListener(
+    function (request, sender, sendResponse) {
+      if (request.action === "settingsNotification") {
+        console.log("settingsNotification message received");
+        notification.style.display = 'block';
+        // Set the flag to indicate that the user has seen the notification
+        // chrome.storage.local.set({ 'notificationSeen': true });
+      }
+    }
+  );
+
+  // version number in popup menu
+  const manifest = chrome.runtime.getManifest();
+  const version = manifest.version;
+
+  document.getElementById('version-number').textContent = `v${version}`;
+  setTimeout(() => {
+    console.log(`ESD Version - ${version}`);
+  }, 8000);
+
+
+
+  const dismissButton = document.querySelector('.welcome-tooltip-container .notification-tooltip .dismiss-tooltip');
+  const tooltipContainer = document.querySelector('.welcome-tooltip-container');
+
+  dismissButton.addEventListener('click', function () {
+      tooltipContainer.style.display = 'none';
+  });
+
+
+
+
+
   // RUN INIT FUNCTION
   function runInit() {
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-      chrome.tabs.sendMessage(tabs[0].id, { action: "runInit" });
+    chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      // Ensure there is at least one tab and its URL includes 'youtube.com'
+      if (tabs.length > 0 && tabs[0].url && tabs[0].url.includes("youtube.com")) {
+        chrome.tabs.sendMessage(tabs[0].id, {action: "runInit"}, function(response) {
+          if (chrome.runtime.lastError) {
+            console.log('Error sending runInit message:', chrome.runtime.lastError.message);
+          }
+          // process response?
+        });
+      }
     });
   }
+  
 
 
   // FUNCTION to Load any previously saved settings
@@ -224,7 +266,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
   } catch (error) {
-    console.error("Error retrieving extensionEnabled:", error);
+    console.log("Error retrieving extensionEnabled:", error);
   }
 });
 
